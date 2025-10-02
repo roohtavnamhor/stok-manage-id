@@ -15,6 +15,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -182,6 +192,8 @@ const StokKeluar = () => {
     }
   };
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -189,7 +201,12 @@ const StokKeluar = () => {
       toast.error("Semua field wajib diisi kecuali varian");
       return;
     }
-
+    
+    // Show confirmation dialog instead of immediately submitting
+    setConfirmDialogOpen(true);
+  };
+  
+  const handleConfirmSubmit = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -222,6 +239,7 @@ const StokKeluar = () => {
 
       toast.success("Stok keluar berhasil ditambahkan");
       setDialogOpen(false);
+      setConfirmDialogOpen(false);
       setFormData({ product_id: "", variant: "", quantity: "", destination_type: "" });
       fetchData();
     } catch (error: any) {
@@ -429,6 +447,22 @@ const StokKeluar = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Stok Keluar</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>Perhatian!</strong> Setelah stok keluar diposting, data tidak dapat dibatalkan atau dihapus. 
+              Pastikan data yang Anda masukkan sudah benar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>Konfirmasi</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };

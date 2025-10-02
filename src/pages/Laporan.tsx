@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, TrendingUp, TrendingDown, Package as PackageIcon } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { FileText, TrendingUp, TrendingDown, Package as PackageIcon, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface StockSummary {
   product_name: string;
@@ -20,6 +23,44 @@ const Laporan = () => {
   useEffect(() => {
     fetchStockSummary();
   }, []);
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString('id-ID');
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Laporan Stok Barang", 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Tanggal: ${currentDate}`, 14, 30);
+    
+    // Add summary
+    doc.setFontSize(14);
+    doc.text("Ringkasan", 14, 40);
+    doc.setFontSize(10);
+    doc.text(`Total Stok Masuk: ${totals.totalIn}`, 14, 48);
+    doc.text(`Total Stok Keluar: ${totals.totalOut}`, 14, 54);
+    doc.text(`Total Stok Tersedia: ${totals.totalStock}`, 14, 60);
+    
+    // Add table
+    autoTable(doc, {
+      startY: 70,
+      head: [['Produk', 'Varian', 'Stok Masuk', 'Stok Keluar', 'Stok Tersedia']],
+      body: stockSummary.map(item => [
+        item.product_name,
+        item.variant || '-',
+        item.total_in.toString(),
+        item.total_out.toString(),
+        item.current_stock.toString()
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      alternateRowStyles: { fillColor: [240, 240, 240] }
+    });
+    
+    // Save PDF
+    doc.save(`Laporan_Stok_${currentDate}.pdf`);
+  };
 
   const fetchStockSummary = async () => {
     try {
@@ -130,12 +171,18 @@ const Laporan = () => {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Ringkasan Stok Per Produk
-            </CardTitle>
-            <CardDescription>Detail stok untuk setiap produk dan varian</CardDescription>
+          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Ringkasan Stok Per Produk
+              </CardTitle>
+              <CardDescription>Detail stok untuk setiap produk dan varian</CardDescription>
+            </div>
+            <Button variant="outline" className="gap-2" onClick={exportToPDF}>
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
           </CardHeader>
           <CardContent>
             {loading ? (

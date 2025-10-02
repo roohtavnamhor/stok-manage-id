@@ -68,19 +68,27 @@ const ITEMS_PER_PAGE = 10;
 const Dashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [groupedProducts, setGroupedProducts] = useState<{[key: string]: Product[]}>({});
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [variantSelectDialogOpen, setVariantSelectDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProductGroup, setEditingProductGroup] = useState<Product[]>([]);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProductName, setSelectedProductName] = useState<string>("");
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [historyVariantFilter, setHistoryVariantFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [formData, setFormData] = useState({ name: "", variants: [""] });
+  const [historyDateFilter, setHistoryDateFilter] = useState<{startDate: string, endDate: string}>({
+    startDate: new Date().toISOString().split('T')[0], // Today
+    endDate: new Date().toISOString().split('T')[0]
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -110,7 +118,7 @@ const Dashboard = () => {
       const isAdmin = profile?.role === "superadmin";
       setIsSuperadmin(isAdmin);
 
-      let query = supabase.from("products").select("*").order("created_at", { ascending: false });
+      let query = supabase.from("products").select("*").order("name", { ascending: true });
 
       if (!isAdmin) {
         query = query.eq("user_id", user.id);
@@ -135,8 +143,25 @@ const Dashboard = () => {
         }));
       }
 
+      // Group products by name
+      const grouped: {[key: string]: Product[]} = {};
+      productsWithProfiles.forEach((product: Product) => {
+        if (!grouped[product.name]) {
+          grouped[product.name] = [];
+        }
+        grouped[product.name].push(product);
+      });
+      
+      setGroupedProducts(grouped);
       setProducts(productsWithProfiles);
-      setFilteredProducts(productsWithProfiles);
+      
+      // For filtered products, we'll use the first product of each group
+      const uniqueProducts = Object.values(grouped).map(group => ({
+        ...group[0],
+        variants: group.map(p => p.variant).filter(Boolean)
+      }));
+      
+      setFilteredProducts(uniqueProducts);
     } catch (error: any) {
       toast.error("Gagal memuat produk");
     } finally {
@@ -153,39 +178,53 @@ const Dashboard = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (editingProductGroup && editingProductGroup.length > 0) {
+        // Get user ID from the first product in the group
+        const userId = editingProductGroup[0].user_id;
+        
+        // Delete all existing variants
+        const { error: deleteError } = await supabase
+          .from("products")
+          .delete()
+          .eq("name", formData.name);
+          
+        if (deleteError) throw deleteError;
+        
+        // Create updated variants
+        const validVariants = formData.variants.filter((v) => v.trim() !== "");
+        const products = validVariants.length > 0 
+          ? validVariants.map((variant) => ({
+              name: formData.name,
+              variant: variant,
+              user_id: userId,
+            }))
+          : [{
+              name: formData.name,
+              variant: null,
+              user_id: userId,
+            }];
 
-      const validVariants = formData.variants.filter((v) => v.trim() !== "");
+        const { error: insertError } = await supabase.from("products").insert(products);
+        if (insertError) throw insertError;
+        
+        toast.success("Produk berhasil diperbarui");
+      } else {
+        // Create new product(s)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      if (validVariants.length === 0) {
-        // Single product without variant
-        if (editingProduct) {
-          const { error } = await supabase
-            .from("products")
-            .update({ name: formData.name, variant: null })
-            .eq("id", editingProduct.id);
-          if (error) throw error;
-          toast.success("Produk berhasil diperbarui");
-        } else {
+        const validVariants = formData.variants.filter((v) => v.trim() !== "");
+        
+        if (validVariants.length === 0) {
+          // Single product without variant
           const { error } = await supabase.from("products").insert({
             name: formData.name,
             variant: null,
             user_id: user.id,
           });
           if (error) throw error;
-          toast.success("Produk berhasil ditambahkan");
-        }
-      } else {
-        // Multiple variants
-        if (editingProduct) {
-          const { error } = await supabase
-            .from("products")
-            .update({ name: formData.name, variant: validVariants[0] })
-            .eq("id", editingProduct.id);
-          if (error) throw error;
-          toast.success("Produk berhasil diperbarui");
         } else {
+          // Multiple variants
           const productsToInsert = validVariants.map((variant) => ({
             name: formData.name,
             variant: variant,
@@ -193,13 +232,14 @@ const Dashboard = () => {
           }));
           const { error } = await supabase.from("products").insert(productsToInsert);
           if (error) throw error;
-          toast.success("Produk berhasil ditambahkan");
         }
+        toast.success("Produk berhasil ditambahkan");
       }
 
       setDialogOpen(false);
       setFormData({ name: "", variants: [""] });
       setEditingProduct(null);
+      setEditingProductGroup([]);
       fetchProducts();
     } catch (error: any) {
       toast.error("Gagal menyimpan produk");
@@ -213,17 +253,25 @@ const Dashboard = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteProductId) return;
+    if (!deleteProductId || !selectedProductName) return;
 
     try {
-      const { error } = await supabase.from("products").delete().eq("id", deleteProductId);
+      // Delete all products with the same name
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("name", selectedProductName);
+
       if (error) throw error;
-      toast.success("Produk berhasil dihapus");
-      setDeleteDialogOpen(false);
-      setDeleteProductId(null);
+
+      toast.success(`Produk "${selectedProductName}" dan semua variannya berhasil dihapus`);
       fetchProducts();
     } catch (error: any) {
       toast.error("Gagal menghapus produk");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteProductId(null);
+      setSelectedProductName("");
     }
   };
 
@@ -275,21 +323,21 @@ const Dashboard = () => {
         stockInRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant,
+          variant: item.variant || product.variant, // Use product variant if item variant is null
           date: item.date,
           type: "in" as const,
-          source_destination: item.cabang.name,
+          source_destination: item.cabang?.name || "-",
         })) || [];
 
       const stockOutData: HistoryItem[] =
         stockOutRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant,
+          variant: item.variant || product.variant, // Use product variant if item variant is null
           date: item.date,
           type: "out" as const,
-          source_destination: item.cabang.name,
-          jenis: item.jenis_stok_keluar.name,
+          source_destination: item.cabang?.name || "-",
+          jenis: item.jenis_stok_keluar?.name || "-",
         })) || [];
 
       const combined = [...stockInData, ...stockOutData].sort(
@@ -298,6 +346,7 @@ const Dashboard = () => {
 
       setHistoryData(combined);
     } catch (error) {
+      console.error("Error loading product history:", error);
       toast.error("Gagal memuat riwayat");
     }
   };
@@ -393,19 +442,32 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Daftar Produk
-                </CardTitle>
-                <CardDescription>{filteredProducts.length} produk terdaftar</CardDescription>
-              </div>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Daftar Produk
+              </CardTitle>
+              <CardDescription>{filteredProducts.length} produk terdaftar</CardDescription>
+            </div>
+            <div className="flex gap-2">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Cari produk atau varian..."
               />
+              {!isSuperadmin && (
+                <Button onClick={() => {
+                  setEditingProduct(null);
+                  setEditingProductGroup([]);
+                  setFormData({ name: "", variants: [""] });
+                  setDialogOpen(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Produk
+                </Button>
+              )}
             </div>
+          </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -433,35 +495,74 @@ const Dashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedProducts.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.variant || "-"}</TableCell>
-                          {isSuperadmin && (
+                      {Object.entries(groupedProducts)
+                        .filter(([name]) => name.toLowerCase().includes(searchQuery.toLowerCase()))
+                        .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                        .map(([name, products]) => (
+                          <TableRow key={name}>
+                            <TableCell className="font-medium">{name}</TableCell>
                             <TableCell>
-                              <Badge variant="outline">{product.profiles?.email || "Unknown"}</Badge>
+                              <div className="flex flex-wrap gap-1">
+                                {products.map((product) => (
+                                  <Badge key={product.id} variant="outline">
+                                    {product.variant || "Default"}
+                                  </Badge>
+                                ))}
+                              </div>
                             </TableCell>
-                          )}
-                          <TableCell>{new Date(product.created_at).toLocaleDateString("id-ID")}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="icon" onClick={() => openHistoryDialog(product)}>
-                                <History className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openDeleteDialog(product.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            {isSuperadmin && (
+                              <TableCell>
+                                <Badge variant="outline">{products[0].profiles?.email || "Unknown"}</Badge>
+                              </TableCell>
+                            )}
+                            <TableCell>{new Date(products[0].created_at).toLocaleDateString("id-ID")}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => {
+                                    setSelectedProductName(name);
+                                    setVariantSelectDialogOpen(true);
+                                  }}
+                                >
+                                  <History className="h-4 w-4" />
+                                </Button>
+                                {!isSuperadmin && (
+                                  <>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => {
+                                        setEditingProductGroup(products);
+                                        setFormData({
+                                          name: name,
+                                          variants: products.map(p => p.variant || "")
+                                        });
+                                        setDialogOpen(true);
+                                      }}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        // Delete all products in this group
+                                        const ids = products.map(p => p.id);
+                                        setDeleteProductId(ids[0]); // We'll use the first ID but delete all
+                                        setSelectedProductName(name); // Store name for confirmation message
+                                        setDeleteDialogOpen(true);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -484,7 +585,7 @@ const Dashboard = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus produk "{selectedProductName}" dan semua variannya? Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -498,6 +599,34 @@ const Dashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Variant Select Dialog */}
+      <Dialog open={variantSelectDialogOpen} onOpenChange={setVariantSelectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Varian</DialogTitle>
+            <DialogDescription>
+              Pilih varian dari produk "{selectedProductName}" untuk melihat riwayat.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {groupedProducts[selectedProductName]?.map((product) => (
+              <Button
+                key={product.id}
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setVariantSelectDialogOpen(false);
+                  openHistoryDialog(product);
+                }}
+              >
+                {product.variant || "Default"}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* History Dialog */}
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
