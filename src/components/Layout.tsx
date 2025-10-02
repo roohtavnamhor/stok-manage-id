@@ -169,22 +169,22 @@ const Layout = ({ children }: LayoutProps) => {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header */}
-        <header className="md:hidden flex items-center gap-4 border-b border-border px-4 py-3 bg-card">
+        {/* Mobile Sidebar */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+            <Button variant="ghost" size="icon" className="md:hidden absolute left-4 top-3 z-50">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0 bg-sidebar">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+
+        {/* Mobile Header */}
+        <header className="md:hidden flex items-center justify-center border-b border-border px-4 py-3 bg-card">
           <h1 className="text-lg font-semibold text-foreground">Stok Gudang</h1>
         </header>
 
