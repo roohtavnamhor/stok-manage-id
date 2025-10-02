@@ -12,9 +12,20 @@ import {
   Users,
   LogOut,
   Menu,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -35,8 +46,10 @@ const Layout = ({ children }: LayoutProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -71,16 +84,21 @@ const Layout = ({ children }: LayoutProps) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, email")
         .eq("id", userId)
         .single();
 
       if (error) throw error;
       setUserRole(data?.role || "user");
+      setUserEmail(data?.email || "");
     } catch (error) {
       console.error("Error fetching user role:", error);
       setUserRole("user");
     }
+  };
+
+  const confirmLogout = () => {
+    setLogoutDialogOpen(true);
   };
 
   const handleLogout = async () => {
@@ -88,13 +106,16 @@ const Layout = ({ children }: LayoutProps) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("Berhasil logout");
+      setLogoutDialogOpen(false);
       navigate("/auth");
     } catch (error: any) {
       toast.error("Gagal logout");
+      setLogoutDialogOpen(false);
     }
   };
 
   const navItems: NavItem[] = [
+    { name: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
     { name: "Produk", icon: <Package className="h-5 w-5" />, path: "/dashboard" },
     { name: "Stok Masuk", icon: <ArrowDownToLine className="h-5 w-5" />, path: "/stok-masuk" },
     { name: "Stok Keluar", icon: <ArrowUpFromLine className="h-5 w-5" />, path: "/stok-keluar" },
@@ -108,6 +129,12 @@ const Layout = ({ children }: LayoutProps) => {
     (item) => !item.superadminOnly || userRole === "superadmin"
   );
 
+  const getDisplayName = () => {
+    if (!userEmail) return "User";
+    const name = userEmail.split("@")[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-sidebar-border px-6 py-4">
@@ -116,7 +143,7 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
         <div>
           <h2 className="text-lg font-bold text-sidebar-foreground">Stok Gudang</h2>
-          <p className="text-xs text-sidebar-foreground/60">{user?.email}</p>
+          <p className="text-xs text-sidebar-foreground/60">{getDisplayName()}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">
@@ -142,7 +169,7 @@ const Layout = ({ children }: LayoutProps) => {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          onClick={handleLogout}
+          onClick={confirmLogout}
         >
           <LogOut className="h-5 w-5" />
           Keluar
@@ -193,6 +220,22 @@ const Layout = ({ children }: LayoutProps) => {
           {children}
         </main>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari aplikasi?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Keluar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
