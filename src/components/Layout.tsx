@@ -137,13 +137,17 @@ const Layout = ({ children }: LayoutProps) => {
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-6 py-4">
-        <div className="p-2 bg-primary rounded-lg">
-          <Package className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <div>
+      <div className="border-b border-sidebar-border px-6 py-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="p-2 bg-primary rounded-lg">
+            <Package className="h-6 w-6 text-primary-foreground" />
+          </div>
           <h2 className="text-lg font-bold text-sidebar-foreground">Stok Gudang</h2>
-          <p className="text-xs text-sidebar-foreground/60">{getDisplayName()}</p>
+        </div>
+        <p className="text-xs text-sidebar-foreground/60 mb-2">Manajemen Stok SAJ</p>
+        <div className="bg-sidebar-accent/50 rounded-lg px-3 py-2">
+          <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
+          <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">

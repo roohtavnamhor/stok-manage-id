@@ -12,7 +12,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -43,6 +42,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Package, History, X } from "lucide-react";
+import { format } from "date-fns";
 
 interface Product {
   id: string;
@@ -74,7 +74,6 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [variantSelectDialogOpen, setVariantSelectDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingProductGroup, setEditingProductGroup] = useState<Product[]>([]);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -86,8 +85,8 @@ const Dashboard = () => {
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [formData, setFormData] = useState({ name: "", variants: [""] });
   const [historyDateFilter, setHistoryDateFilter] = useState<{startDate: string, endDate: string}>({
-    startDate: new Date().toISOString().split('T')[0], // Today
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: format(new Date(), "yyyy-MM-dd"),
+    endDate: format(new Date(), "yyyy-MM-dd")
   });
 
   useEffect(() => {
@@ -128,7 +127,6 @@ const Dashboard = () => {
 
       if (error) throw error;
       
-      // Fetch user emails for products if superadmin
       let productsWithProfiles = data || [];
       if (isAdmin && data) {
         const userIds = Array.from(new Set(data.map((p: any) => p.user_id)));
@@ -143,7 +141,6 @@ const Dashboard = () => {
         }));
       }
 
-      // Group products by name
       const grouped: {[key: string]: Product[]} = {};
       productsWithProfiles.forEach((product: Product) => {
         if (!grouped[product.name]) {
@@ -155,7 +152,6 @@ const Dashboard = () => {
       setGroupedProducts(grouped);
       setProducts(productsWithProfiles);
       
-      // For filtered products, we'll use the first product of each group
       const uniqueProducts = Object.values(grouped).map(group => ({
         ...group[0],
         variants: group.map(p => p.variant).filter(Boolean)
@@ -179,10 +175,8 @@ const Dashboard = () => {
 
     try {
       if (editingProductGroup && editingProductGroup.length > 0) {
-        // Get user ID from the first product in the group
         const userId = editingProductGroup[0].user_id;
         
-        // Delete all existing variants
         const { error: deleteError } = await supabase
           .from("products")
           .delete()
@@ -190,7 +184,6 @@ const Dashboard = () => {
           
         if (deleteError) throw deleteError;
         
-        // Create updated variants
         const validVariants = formData.variants.filter((v) => v.trim() !== "");
         const products = validVariants.length > 0 
           ? validVariants.map((variant) => ({
@@ -209,14 +202,12 @@ const Dashboard = () => {
         
         toast.success("Produk berhasil diperbarui");
       } else {
-        // Create new product(s)
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         const validVariants = formData.variants.filter((v) => v.trim() !== "");
         
         if (validVariants.length === 0) {
-          // Single product without variant
           const { error } = await supabase.from("products").insert({
             name: formData.name,
             variant: null,
@@ -224,7 +215,6 @@ const Dashboard = () => {
           });
           if (error) throw error;
         } else {
-          // Multiple variants
           const productsToInsert = validVariants.map((variant) => ({
             name: formData.name,
             variant: variant,
@@ -238,7 +228,6 @@ const Dashboard = () => {
 
       setDialogOpen(false);
       setFormData({ name: "", variants: [""] });
-      setEditingProduct(null);
       setEditingProductGroup([]);
       fetchProducts();
     } catch (error: any) {
@@ -246,17 +235,10 @@ const Dashboard = () => {
     }
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({ name: product.name, variants: [product.variant || ""] });
-    setDialogOpen(true);
-  };
-
   const handleDelete = async () => {
     if (!deleteProductId || !selectedProductName) return;
 
     try {
-      // Delete all products with the same name
       const { error } = await supabase
         .from("products")
         .delete()
@@ -275,14 +257,9 @@ const Dashboard = () => {
     }
   };
 
-  const openDeleteDialog = (id: string) => {
-    setDeleteProductId(id);
-    setDeleteDialogOpen(true);
-  };
-
   const resetForm = () => {
     setFormData({ name: "", variants: [""] });
-    setEditingProduct(null);
+    setEditingProductGroup([]);
   };
 
   const addVariantField = () => {
@@ -304,18 +281,30 @@ const Dashboard = () => {
     setSelectedProduct(product);
     setHistoryVariantFilter("");
     setHistoryDialogOpen(true);
+    fetchHistoryData(product);
+  };
 
+  const fetchHistoryData = async (product: Product) => {
     try {
+      const startDate = new Date(historyDateFilter.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(historyDateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999);
+
       const [stockInRes, stockOutRes] = await Promise.all([
         supabase
           .from("stock_in")
           .select("*, cabang(name)")
           .eq("product_id", product.id)
+          .gte("date", startDate.toISOString())
+          .lte("date", endDate.toISOString())
           .order("date", { ascending: false }),
         supabase
           .from("stock_out")
           .select("*, cabang(name), jenis_stok_keluar(name)")
           .eq("product_id", product.id)
+          .gte("date", startDate.toISOString())
+          .lte("date", endDate.toISOString())
           .order("date", { ascending: false }),
       ]);
 
@@ -323,17 +312,17 @@ const Dashboard = () => {
         stockInRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant || product.variant, // Use product variant if item variant is null
+          variant: item.variant || product.variant,
           date: item.date,
           type: "in" as const,
-          source_destination: item.cabang?.name || "-",
+          source_destination: item.cabang?.name || "SUPPLIER",
         })) || [];
 
       const stockOutData: HistoryItem[] =
         stockOutRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant || product.variant, // Use product variant if item variant is null
+          variant: item.variant || product.variant,
           date: item.date,
           type: "out" as const,
           source_destination: item.cabang?.name || "-",
@@ -357,20 +346,19 @@ const Dashboard = () => {
 
   const uniqueVariants = Array.from(new Set(historyData.map((item) => item.variant).filter(Boolean)));
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const totalPages = Math.ceil(Object.keys(groupedProducts).filter(name => 
+    name.toLowerCase().includes(searchQuery.toLowerCase())
+  ).length / ITEMS_PER_PAGE);
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Produk</h1>
-            <p className="text-muted-foreground">Kelola daftar produk Anda</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Produk</h1>
+          <p className="text-muted-foreground">Kelola daftar produk Anda</p>
+        </div>
+
+        {!isSuperadmin && (
           <Dialog
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -378,17 +366,11 @@ const Dashboard = () => {
               if (!open) resetForm();
             }}
           >
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Tambah Produk
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingProduct ? "Edit Produk" : "Tambah Produk Baru"}</DialogTitle>
+                <DialogTitle>{editingProductGroup.length > 0 ? "Edit Produk" : "Tambah Produk Baru"}</DialogTitle>
                 <DialogDescription>
-                  {editingProduct ? "Perbarui informasi produk" : "Masukkan informasi produk baru"}
+                  {editingProductGroup.length > 0 ? "Perbarui informasi produk" : "Masukkan informasi produk baru"}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -432,24 +414,25 @@ const Dashboard = () => {
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Batal
                   </Button>
-                  <Button type="submit">{editingProduct ? "Perbarui" : "Simpan"}</Button>
+                  <Button type="submit">{editingProductGroup.length > 0 ? "Perbarui" : "Simpan"}</Button>
                 </div>
               </form>
             </DialogContent>
           </Dialog>
-        </div>
+        )}
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
                 Daftar Produk
               </CardTitle>
-              <CardDescription>{filteredProducts.length} produk terdaftar</CardDescription>
+              <CardDescription>{Object.keys(groupedProducts).length} produk terdaftar</CardDescription>
             </div>
-            <div className="flex gap-2">
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
@@ -457,24 +440,21 @@ const Dashboard = () => {
               />
               {!isSuperadmin && (
                 <Button onClick={() => {
-                  setEditingProduct(null);
                   setEditingProductGroup([]);
                   setFormData({ name: "", variants: [""] });
                   setDialogOpen(true);
-                }}>
+                }} className="whitespace-nowrap">
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah Produk
                 </Button>
               )}
             </div>
-          </div>
-          </CardHeader>
-          <CardContent>
+
             {loading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Memuat data...</p>
               </div>
-            ) : paginatedProducts.length === 0 ? (
+            ) : Object.keys(groupedProducts).length === 0 ? (
               <div className="text-center py-8">
                 <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
@@ -548,10 +528,9 @@ const Dashboard = () => {
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
-                                        // Delete all products in this group
                                         const ids = products.map(p => p.id);
-                                        setDeleteProductId(ids[0]); // We'll use the first ID but delete all
-                                        setSelectedProductName(name); // Store name for confirmation message
+                                        setDeleteProductId(ids[0]);
+                                        setSelectedProductName(name);
                                         setDeleteDialogOpen(true);
                                       }}
                                     >
@@ -579,7 +558,6 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -600,7 +578,6 @@ const Dashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Variant Select Dialog */}
       <Dialog open={variantSelectDialogOpen} onOpenChange={setVariantSelectDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -628,7 +605,6 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* History Dialog */}
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -638,27 +614,53 @@ const Dashboard = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {uniqueVariants.length > 0 && (
-              <div className="space-y-2">
-                <Label>Filter Varian</Label>
-                <Select value={historyVariantFilter} onValueChange={setHistoryVariantFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Semua varian" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Semua varian</SelectItem>
-                    {uniqueVariants.map((variant) => (
-                      <SelectItem key={variant} value={variant as string}>
-                        {variant}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+              <div>
+                <Label htmlFor="startDate">Tanggal Mulai</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={historyDateFilter.startDate}
+                  onChange={(e) => {
+                    setHistoryDateFilter({ ...historyDateFilter, startDate: e.target.value });
+                    if (selectedProduct) fetchHistoryData(selectedProduct);
+                  }}
+                />
               </div>
-            )}
+              <div>
+                <Label htmlFor="endDate">Tanggal Akhir</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={historyDateFilter.endDate}
+                  onChange={(e) => {
+                    setHistoryDateFilter({ ...historyDateFilter, endDate: e.target.value });
+                    if (selectedProduct) fetchHistoryData(selectedProduct);
+                  }}
+                />
+              </div>
+              {uniqueVariants.length > 0 && (
+                <div>
+                  <Label>Filter Varian</Label>
+                  <Select value={historyVariantFilter} onValueChange={setHistoryVariantFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Semua varian" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Semua varian</SelectItem>
+                      {uniqueVariants.map((variant) => (
+                        <SelectItem key={variant} value={variant as string}>
+                          {variant}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
             <div className="overflow-x-auto">
               {filteredHistory.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Belum ada riwayat</p>
+                <p className="text-center text-muted-foreground py-8">Belum ada riwayat untuk periode ini</p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -674,7 +676,7 @@ const Dashboard = () => {
                   <TableBody>
                     {filteredHistory.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{new Date(item.date).toLocaleString("id-ID")}</TableCell>
+                        <TableCell>{format(new Date(item.date), "dd MMM yyyy HH:mm")}</TableCell>
                         <TableCell>
                           <Badge variant={item.type === "in" ? "default" : "destructive"}>
                             {item.type === "in" ? "Masuk" : "Keluar"}

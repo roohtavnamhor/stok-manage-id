@@ -236,14 +236,15 @@ const StokMasuk = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Stok Masuk</h1>
-            <p className="text-muted-foreground">Kelola stok barang masuk</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Stok Masuk</h1>
+          <p className="text-muted-foreground">Kelola stok barang masuk</p>
+        </div>
+
+        {!isSuperadmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 hidden">
                 <Plus className="h-4 w-4" />
                 Tambah Stok Masuk
               </Button>
@@ -342,26 +343,32 @@ const StokMasuk = () => {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
+        )}
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowDownToLine className="h-5 w-5 text-success" />
-                  Riwayat Stok Masuk
-                </CardTitle>
-                <CardDescription>{filteredStockIns.length} transaksi stok masuk</CardDescription>
-              </div>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowDownToLine className="h-5 w-5 text-success" />
+                Riwayat Stok Masuk
+              </CardTitle>
+              <CardDescription>{filteredStockIns.length} transaksi stok masuk</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Cari produk, varian, atau cabang..."
               />
+              {!isSuperadmin && (
+                <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
+                  <Plus className="h-4 w-4" />
+                  Tambah Stok Masuk
+                </Button>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
             {loading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Memuat data...</p>

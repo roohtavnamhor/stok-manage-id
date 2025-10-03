@@ -16,8 +16,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   },
   global: {
-    fetch: (...args) => {
-      return fetch(...args).catch(err => {
+    fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+      return fetch(input, init).catch(err => {
         // Handle network errors gracefully
         if (err.message?.includes('net::ERR') || err.name === 'TypeError') {
           toast.error("Koneksi ke server gagal. Periksa koneksi internet Anda atau coba lagi nanti.");
