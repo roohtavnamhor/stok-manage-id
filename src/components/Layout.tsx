@@ -138,7 +138,7 @@ const Layout = ({ children }: LayoutProps) => {
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border px-6 py-4">
-        <div className="flex items-start gap-2 mb-2">
+        <div className="flex items-start gap-2">
           <div className="p-2 bg-primary rounded-lg">
             <Package className="h-6 w-6 text-primary-foreground" />
           </div>
@@ -147,7 +147,7 @@ const Layout = ({ children }: LayoutProps) => {
             <p className="text-xs text-sidebar-foreground/60">Manajemen Stok SAJ</p>
           </div>
         </div>
-        <div className="border-t border-sidebar-border pt-3 mt-3">
+        <div className="border-t border-sidebar-border mt-4 pt-4">
           <div className="bg-sidebar-accent/50 rounded-lg px-3 py-2">
             <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
             <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>

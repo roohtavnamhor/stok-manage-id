@@ -583,15 +583,20 @@ const Dashboard = () => {
       </AlertDialog>
 
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Riwayat Sirkulasi Produk</DialogTitle>
             <DialogDescription>
-              {selectedProductName} - Riwayat stok masuk dan keluar
+              {selectedProductName} - Filter berdasarkan tanggal dan varian
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Filter</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="startDate">Tanggal Mulai</Label>
                 <Input
@@ -616,25 +621,25 @@ const Dashboard = () => {
                   }}
                 />
               </div>
-              {uniqueVariants.length > 0 && (
-                <div>
-                  <Label>Filter Varian</Label>
-                  <Select value={historyVariantFilter} onValueChange={setHistoryVariantFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Semua varian" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Semua varian</SelectItem>
-                      {uniqueVariants.map((variant) => (
-                        <SelectItem key={variant} value={variant as string}>
-                          {variant}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label>Filter Varian</Label>
+                    <Select value={historyVariantFilter} onValueChange={setHistoryVariantFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Semua varian" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Semua varian</SelectItem>
+                        {uniqueVariants.map((variant) => (
+                          <SelectItem key={variant} value={variant as string}>
+                            {variant}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
             <div className="overflow-x-auto">
               {filteredHistory.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">Belum ada riwayat untuk periode ini</p>

@@ -50,7 +50,7 @@ const Laporan = () => {
   const [stockOutReport, setStockOutReport] = useState<StockOutReport[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState<boolean | null>(null);
   
   const [filters, setFilters] = useState({
     startDate: format(new Date(), "yyyy-MM-dd"),
@@ -70,9 +70,11 @@ const Laporan = () => {
   }, [isSuperadmin]);
 
   useEffect(() => {
-    fetchStockInReport();
-    fetchStockOutReport();
-  }, [filters]);
+    if (isSuperadmin !== null) {
+      fetchStockInReport();
+      fetchStockOutReport();
+    }
+  }, [filters, isSuperadmin]);
 
   const checkUserRole = async () => {
     try {
