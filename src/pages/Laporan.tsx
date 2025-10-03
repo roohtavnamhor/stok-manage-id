@@ -50,6 +50,7 @@ const Laporan = () => {
   const [stockOutReport, setStockOutReport] = useState<StockOutReport[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   
   const [filters, setFilters] = useState({
     startDate: format(new Date(), "yyyy-MM-dd"),
@@ -58,18 +59,51 @@ const Laporan = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
-    fetchStockSummary();
+    checkUserRole();
   }, []);
+
+  useEffect(() => {
+    if (isSuperadmin !== null) {
+      fetchProducts();
+      fetchStockSummary();
+    }
+  }, [isSuperadmin]);
 
   useEffect(() => {
     fetchStockInReport();
     fetchStockOutReport();
   }, [filters]);
 
+  const checkUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      setIsSuperadmin(profile?.role === "superadmin");
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      setIsSuperadmin(false);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
-      const { data } = await supabase.from("products").select("id, name").order("name");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase.from("products").select("id, name").order("name");
+
+      if (!isSuperadmin) {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data } = await query;
       setProducts(data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -78,9 +112,20 @@ const Laporan = () => {
 
   const fetchStockSummary = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let stockInQuery = supabase.from("stock_in").select("product_id, variant, quantity, products(name)");
+      let stockOutQuery = supabase.from("stock_out").select("product_id, variant, quantity, products(name)");
+
+      if (!isSuperadmin) {
+        stockInQuery = stockInQuery.eq("user_id", user.id);
+        stockOutQuery = stockOutQuery.eq("user_id", user.id);
+      }
+
       const [stockInRes, stockOutRes] = await Promise.all([
-        supabase.from("stock_in").select("product_id, variant, quantity, products(name)"),
-        supabase.from("stock_out").select("product_id, variant, quantity, products(name)"),
+        stockInQuery,
+        stockOutQuery,
       ]);
 
       const summaryMap = new Map<string, StockSummary>();
@@ -129,6 +174,9 @@ const Laporan = () => {
 
   const fetchStockInReport = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const startDate = new Date(filters.startDate);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(filters.endDate);
@@ -140,6 +188,10 @@ const Laporan = () => {
         .gte("date", startDate.toISOString())
         .lte("date", endDate.toISOString())
         .order("date", { ascending: false });
+
+      if (!isSuperadmin) {
+        query = query.eq("user_id", user.id);
+      }
 
       if (filters.productId) {
         query = query.eq("product_id", filters.productId);
@@ -162,6 +214,9 @@ const Laporan = () => {
 
   const fetchStockOutReport = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const startDate = new Date(filters.startDate);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(filters.endDate);
@@ -173,6 +228,10 @@ const Laporan = () => {
         .gte("date", startDate.toISOString())
         .lte("date", endDate.toISOString())
         .order("date", { ascending: false });
+
+      if (!isSuperadmin) {
+        query = query.eq("user_id", user.id);
+      }
 
       if (filters.productId) {
         query = query.eq("product_id", filters.productId);

@@ -73,7 +73,6 @@ const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
-  const [variantSelectDialogOpen, setVariantSelectDialogOpen] = useState(false);
   const [editingProductGroup, setEditingProductGroup] = useState<Product[]>([]);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -277,15 +276,23 @@ const Dashboard = () => {
     setFormData({ ...formData, variants: newVariants });
   };
 
-  const openHistoryDialog = async (product: Product) => {
-    setSelectedProduct(product);
+  const openHistoryDialog = async (productName: string) => {
+    const productsInGroup = groupedProducts[productName];
+    if (!productsInGroup || productsInGroup.length === 0) return;
+
+    setSelectedProductName(productName);
     setHistoryVariantFilter("");
     setHistoryDialogOpen(true);
-    fetchHistoryData(product);
+    fetchHistoryDataForProductGroup(productName);
   };
 
-  const fetchHistoryData = async (product: Product) => {
+  const fetchHistoryDataForProductGroup = async (productName: string) => {
     try {
+      const productsInGroup = groupedProducts[productName];
+      if (!productsInGroup || productsInGroup.length === 0) return;
+
+      const productIds = productsInGroup.map(p => p.id);
+
       const startDate = new Date(historyDateFilter.startDate);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(historyDateFilter.endDate);
@@ -295,14 +302,14 @@ const Dashboard = () => {
         supabase
           .from("stock_in")
           .select("*, cabang(name)")
-          .eq("product_id", product.id)
+          .in("product_id", productIds)
           .gte("date", startDate.toISOString())
           .lte("date", endDate.toISOString())
           .order("date", { ascending: false }),
         supabase
           .from("stock_out")
           .select("*, cabang(name), jenis_stok_keluar(name)")
-          .eq("product_id", product.id)
+          .in("product_id", productIds)
           .gte("date", startDate.toISOString())
           .lte("date", endDate.toISOString())
           .order("date", { ascending: false }),
@@ -312,7 +319,7 @@ const Dashboard = () => {
         stockInRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant || product.variant,
+          variant: item.variant,
           date: item.date,
           type: "in" as const,
           source_destination: item.cabang?.name || "SUPPLIER",
@@ -322,7 +329,7 @@ const Dashboard = () => {
         stockOutRes.data?.map((item: any) => ({
           id: item.id,
           quantity: item.quantity,
-          variant: item.variant || product.variant,
+          variant: item.variant,
           date: item.date,
           type: "out" as const,
           source_destination: item.cabang?.name || "-",
@@ -498,13 +505,10 @@ const Dashboard = () => {
                             <TableCell>{new Date(products[0].created_at).toLocaleDateString("id-ID")}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={() => {
-                                    setSelectedProductName(name);
-                                    setVariantSelectDialogOpen(true);
-                                  }}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openHistoryDialog(name)}
                                 >
                                   <History className="h-4 w-4" />
                                 </Button>
@@ -578,39 +582,12 @@ const Dashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={variantSelectDialogOpen} onOpenChange={setVariantSelectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Pilih Varian</DialogTitle>
-            <DialogDescription>
-              Pilih varian dari produk "{selectedProductName}" untuk melihat riwayat.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {groupedProducts[selectedProductName]?.map((product) => (
-              <Button
-                key={product.id}
-                variant="outline"
-                className="justify-start"
-                onClick={() => {
-                  setSelectedProduct(product);
-                  setVariantSelectDialogOpen(false);
-                  openHistoryDialog(product);
-                }}
-              >
-                {product.variant || "Default"}
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Riwayat Sirkulasi Produk</DialogTitle>
             <DialogDescription>
-              {selectedProduct?.name} - Riwayat stok masuk dan keluar
+              {selectedProductName} - Riwayat stok masuk dan keluar
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -623,7 +600,7 @@ const Dashboard = () => {
                   value={historyDateFilter.startDate}
                   onChange={(e) => {
                     setHistoryDateFilter({ ...historyDateFilter, startDate: e.target.value });
-                    if (selectedProduct) fetchHistoryData(selectedProduct);
+                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName);
                   }}
                 />
               </div>
@@ -635,7 +612,7 @@ const Dashboard = () => {
                   value={historyDateFilter.endDate}
                   onChange={(e) => {
                     setHistoryDateFilter({ ...historyDateFilter, endDate: e.target.value });
-                    if (selectedProduct) fetchHistoryData(selectedProduct);
+                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName);
                   }}
                 />
               </div>
