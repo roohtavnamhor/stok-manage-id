@@ -78,6 +78,7 @@ const Dashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedProductName, setSelectedProductName] = useState<string>("");
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [historyVariantFilter, setHistoryVariantFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -287,9 +288,13 @@ const Dashboard = () => {
   };
 
   const fetchHistoryDataForProductGroup = async (productName: string) => {
+    setHistoryLoading(true);
     try {
       const productsInGroup = groupedProducts[productName];
-      if (!productsInGroup || productsInGroup.length === 0) return;
+      if (!productsInGroup || productsInGroup.length === 0) {
+        setHistoryLoading(false);
+        return;
+      }
 
       const productIds = productsInGroup.map(p => p.id);
 
@@ -314,6 +319,15 @@ const Dashboard = () => {
           .lte("date", endDate.toISOString())
           .order("date", { ascending: false }),
       ]);
+
+      if (stockInRes.error) {
+        console.error("Stock in query error:", stockInRes.error);
+        throw stockInRes.error;
+      }
+      if (stockOutRes.error) {
+        console.error("Stock out query error:", stockOutRes.error);
+        throw stockOutRes.error;
+      }
 
       const stockInData: HistoryItem[] =
         stockInRes.data?.map((item: any) => ({
@@ -344,6 +358,9 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error loading product history:", error);
       toast.error("Gagal memuat riwayat");
+      setHistoryData([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -641,7 +658,11 @@ const Dashboard = () => {
               </CardContent>
             </Card>
             <div className="overflow-x-auto">
-              {filteredHistory.length === 0 ? (
+              {historyLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Memuat riwayat...</p>
+                </div>
+              ) : filteredHistory.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">Belum ada riwayat untuk periode ini</p>
               ) : (
                 <Table>
