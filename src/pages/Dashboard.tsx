@@ -284,10 +284,10 @@ const Dashboard = () => {
     setSelectedProductName(productName);
     setHistoryVariantFilter("");
     setHistoryDialogOpen(true);
-    fetchHistoryDataForProductGroup(productName);
+    fetchHistoryDataForProductGroup(productName, historyDateFilter.startDate, historyDateFilter.endDate);
   };
 
-  const fetchHistoryDataForProductGroup = async (productName: string) => {
+  const fetchHistoryDataForProductGroup = async (productName: string, startDateStr?: string, endDateStr?: string) => {
     setHistoryLoading(true);
     try {
       const productsInGroup = groupedProducts[productName];
@@ -298,9 +298,9 @@ const Dashboard = () => {
 
       const productIds = productsInGroup.map(p => p.id);
 
-      const startDate = new Date(historyDateFilter.startDate);
+      const startDate = new Date(startDateStr || historyDateFilter.startDate);
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(historyDateFilter.endDate);
+      const endDate = new Date(endDateStr || historyDateFilter.endDate);
       endDate.setHours(23, 59, 59, 999);
 
       const [stockInRes, stockOutRes] = await Promise.all([
@@ -507,11 +507,22 @@ const Dashboard = () => {
                             <TableCell className="font-medium">{name}</TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                {products.map((product) => (
-                                  <Badge key={product.id} variant="outline">
-                                    {product.variant || "Default"}
-                                  </Badge>
-                                ))}
+                                {products.map((product, index) => {
+                                  const variantColors = [
+                                    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                                    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                                    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+                                    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+                                    "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+                                    "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
+                                  ];
+                                  const colorClass = variantColors[index % variantColors.length];
+                                  return (
+                                    <Badge key={product.id} className={`${colorClass} border-0`}>
+                                      {product.variant || "Default"}
+                                    </Badge>
+                                  );
+                                })}
                               </div>
                             </TableCell>
                             {isSuperadmin && (
@@ -621,8 +632,9 @@ const Dashboard = () => {
                   type="date"
                   value={historyDateFilter.startDate}
                   onChange={(e) => {
-                    setHistoryDateFilter({ ...historyDateFilter, startDate: e.target.value });
-                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName);
+                    const newStartDate = e.target.value;
+                    setHistoryDateFilter({ ...historyDateFilter, startDate: newStartDate });
+                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName, newStartDate, historyDateFilter.endDate);
                   }}
                 />
               </div>
@@ -633,8 +645,9 @@ const Dashboard = () => {
                   type="date"
                   value={historyDateFilter.endDate}
                   onChange={(e) => {
-                    setHistoryDateFilter({ ...historyDateFilter, endDate: e.target.value });
-                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName);
+                    const newEndDate = e.target.value;
+                    setHistoryDateFilter({ ...historyDateFilter, endDate: newEndDate });
+                    if (selectedProductName) fetchHistoryDataForProductGroup(selectedProductName, historyDateFilter.startDate, newEndDate);
                   }}
                 />
               </div>

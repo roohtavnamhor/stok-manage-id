@@ -429,84 +429,79 @@ const StokKeluar = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dateFilter">Tanggal</Label>
-                  <Input
-                    id="dateFilter"
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="productFilter">Produk</Label>
-                  <Select value={productFilter} onValueChange={(v) => {
-                    setProductFilter(v === "all" ? "" : v);
-                    setVariantFilter("");
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Semua Produk" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Produk</SelectItem>
-                      {uniqueProducts.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {productFilter && getFilterVariants().length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="variantFilter">Varian</Label>
-                    <Select value={variantFilter} onValueChange={(v) => setVariantFilter(v === "all" ? "" : v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Semua Varian" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Semua Varian</SelectItem>
-                        {getFilterVariants().map((variant) => (
-                          <SelectItem key={variant} value={variant}>
-                            {variant}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="destinationFilter">Tujuan</Label>
-                  <Select value={destinationFilter} onValueChange={(v) => setDestinationFilter(v === "all" ? "" : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Semua Tujuan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Tujuan</SelectItem>
-                      {cabangs.map((cabang) => (
-                        <SelectItem key={cabang.id} value={cabang.id}>
-                          {cabang.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex flex-wrap gap-4 items-end mb-4">
+              <div className="flex-1 min-w-[200px]">
                 <SearchBar
                   value={searchQuery}
                   onChange={setSearchQuery}
                   placeholder="Cari produk, varian, tujuan, atau jenis..."
                 />
-                {!isSuperadmin && (
-                  <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
-                    <Plus className="h-4 w-4" />
-                    Tambah Stok Keluar
-                  </Button>
-                )}
               </div>
+              <div className="w-auto min-w-[150px]">
+                <Input
+                  id="dateFilter"
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  placeholder="Tanggal"
+                />
+              </div>
+              <div className="w-auto min-w-[180px]">
+                <Select value={productFilter} onValueChange={(v) => {
+                  setProductFilter(v === "all" ? "" : v);
+                  setVariantFilter("");
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua Produk" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Produk</SelectItem>
+                    {uniqueProducts.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {productFilter && getFilterVariants().length > 0 && (
+                <div className="w-auto min-w-[150px]">
+                  <Select value={variantFilter} onValueChange={(v) => setVariantFilter(v === "all" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Semua Varian" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Varian</SelectItem>
+                      {getFilterVariants().map((variant) => (
+                        <SelectItem key={variant} value={variant}>
+                          {variant}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="w-auto min-w-[150px]">
+                <Select value={destinationFilter} onValueChange={(v) => setDestinationFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua Tujuan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tujuan</SelectItem>
+                    {cabangs.map((cabang) => (
+                      <SelectItem key={cabang.id} value={cabang.id}>
+                        {cabang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!isSuperadmin && (
+                <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
+                  <Plus className="h-4 w-4" />
+                  + Tambah
+                </Button>
+              )}
             </div>
             {loading ? (
               <div className="text-center py-8">
