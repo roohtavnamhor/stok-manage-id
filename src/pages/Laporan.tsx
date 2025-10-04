@@ -430,12 +430,12 @@ const Laporan = () => {
                   </div>
                   <div>
                     <Label htmlFor="product">Produk</Label>
-                    <Select value={filters.productId} onValueChange={(value) => setFilters({ ...filters, productId: value })}>
+                    <Select value={filters.productId} onValueChange={(value) => setFilters({ ...filters, productId: value === "all" ? "" : value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Semua Produk" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Produk</SelectItem>
+                        <SelectItem value="all">Semua Produk</SelectItem>
                         {uniqueProducts.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.name}
@@ -517,12 +517,12 @@ const Laporan = () => {
                   </div>
                   <div>
                     <Label htmlFor="product2">Produk</Label>
-                    <Select value={filters.productId} onValueChange={(value) => setFilters({ ...filters, productId: value })}>
+                    <Select value={filters.productId} onValueChange={(value) => setFilters({ ...filters, productId: value === "all" ? "" : value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Semua Produk" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Produk</SelectItem>
+                        <SelectItem value="all">Semua Produk</SelectItem>
                         {uniqueProducts.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.name}

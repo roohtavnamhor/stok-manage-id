@@ -640,12 +640,12 @@ const Dashboard = () => {
               </div>
                   <div>
                     <Label>Filter Varian</Label>
-                    <Select value={historyVariantFilter} onValueChange={setHistoryVariantFilter}>
+                    <Select value={historyVariantFilter} onValueChange={(v) => setHistoryVariantFilter(v === "all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Semua varian" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua varian</SelectItem>
+                        <SelectItem value="all">Semua varian</SelectItem>
                         {uniqueVariants.map((variant) => (
                           <SelectItem key={variant} value={variant as string}>
                             {variant}
