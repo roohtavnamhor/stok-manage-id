@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Package, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -332,9 +332,18 @@ const Laporan = () => {
 
         <Tabs defaultValue="summary" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="summary">Sisa Stok</TabsTrigger>
-            <TabsTrigger value="stockin">Stok Masuk</TabsTrigger>
-            <TabsTrigger value="stockout">Stok Keluar</TabsTrigger>
+            <TabsTrigger value="summary" className="gap-2">
+              <Package className="h-4 w-4" />
+              Sisa Stok
+            </TabsTrigger>
+            <TabsTrigger value="stockin" className="gap-2">
+              <ArrowDownToLine className="h-4 w-4" />
+              Stok Masuk
+            </TabsTrigger>
+            <TabsTrigger value="stockout" className="gap-2">
+              <ArrowUpFromLine className="h-4 w-4" />
+              Stok Keluar
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="summary">

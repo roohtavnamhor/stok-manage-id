@@ -447,11 +447,13 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Daftar Produk
-            </CardTitle>
-            <CardDescription>{Object.keys(groupedProducts).length} produk terdaftar</CardDescription>
+            <div className="flex items-start gap-2">
+              <Package className="h-5 w-5 mt-0.5" />
+              <div>
+                <CardTitle>Daftar Produk</CardTitle>
+                <CardDescription>{Object.keys(groupedProducts).length} produk terdaftar</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
