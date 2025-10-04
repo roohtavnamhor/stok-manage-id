@@ -147,11 +147,11 @@ const Layout = ({ children }: LayoutProps) => {
             <p className="text-xs text-sidebar-foreground/60">Manajemen Stok SAJ</p>
           </div>
         </div>
-        <div className="border-t border-sidebar-border mt-4 pt-4">
-          <div className="bg-sidebar-accent/50 rounded-lg px-3 py-2">
-            <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
-            <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
-          </div>
+      </div>
+      <div className="border-b border-sidebar-border px-6 py-4">
+        <div className="bg-sidebar-accent/50 rounded-lg px-3 py-2">
+          <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
+          <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">

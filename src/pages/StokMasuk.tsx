@@ -390,13 +390,11 @@ const StokMasuk = () => {
 
         <Card>
           <CardHeader>
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowDownToLine className="h-5 w-5 text-success" />
-                Riwayat Stok Masuk
-              </CardTitle>
-              <CardDescription>{filteredStockIns.length} transaksi stok masuk</CardDescription>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <ArrowDownToLine className="h-5 w-5 text-success" />
+              Riwayat Stok Masuk
+            </CardTitle>
+            <CardDescription>{filteredStockIns.length} transaksi stok masuk</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4 items-end mb-4">
@@ -452,9 +450,8 @@ const StokMasuk = () => {
                 </div>
               )}
               {!isSuperadmin && (
-                <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
-                  <Plus className="h-4 w-4" />
-                  + Tambah
+                <Button onClick={() => setDialogOpen(true)} className="whitespace-nowrap">
+                  Tambah
                 </Button>
               )}
             </div>
