@@ -309,14 +309,14 @@ const Dashboard = () => {
           .select("*, cabang(name)")
           .in("product_id", productIds)
           .gte("date", startDate.toISOString())
-          .lte("date", endDate.toISOString())
+          .lt("date", new Date(endDate.getTime() + 1).toISOString())
           .order("date", { ascending: false }),
         supabase
           .from("stock_out")
           .select("*, cabang(name), jenis_stok_keluar(name)")
           .in("product_id", productIds)
           .gte("date", startDate.toISOString())
-          .lte("date", endDate.toISOString())
+          .lt("date", new Date(endDate.getTime() + 1).toISOString())
           .order("date", { ascending: false }),
       ]);
 

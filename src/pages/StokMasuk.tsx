@@ -81,6 +81,9 @@ const StokMasuk = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
+  const [variantFilter, setVariantFilter] = useState<string>("");
   const [formData, setFormData] = useState({
     product_id: "",
     variant: "",
@@ -93,15 +96,42 @@ const StokMasuk = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = stockIns.filter(
+    let filtered = stockIns.filter(
       (item) =>
         item.products.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.variant && item.variant.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.cabang.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Apply date filter
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter);
+      filterDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(filterDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      filtered = filtered.filter((item) => {
+        const itemDate = new Date(item.date);
+        return itemDate >= filterDate && itemDate < nextDay;
+      });
+    }
+
+    // Apply product filter
+    if (productFilter) {
+      const selectedProductName = products.find(p => p.id === productFilter)?.name;
+      if (selectedProductName) {
+        filtered = filtered.filter((item) => item.products.name === selectedProductName);
+      }
+    }
+
+    // Apply variant filter
+    if (variantFilter) {
+      filtered = filtered.filter((item) => item.variant === variantFilter);
+    }
+
     setFilteredStockIns(filtered);
     setCurrentPage(1);
-  }, [searchQuery, stockIns]);
+  }, [searchQuery, stockIns, dateFilter, productFilter, variantFilter, products]);
 
   useEffect(() => {
     if (formData.product_id) {
@@ -118,6 +148,15 @@ const StokMasuk = () => {
       setProductVariants([]);
     }
   }, [formData.product_id, products]);
+
+  // Get variants for filter based on selected product
+  const getFilterVariants = () => {
+    if (!productFilter) return [];
+    const selectedProduct = products.find(p => p.id === productFilter);
+    if (!selectedProduct) return [];
+    const variants = products.filter(p => p.name === selectedProduct.name && p.variant);
+    return variants.map(v => v.variant!).filter(Boolean);
+  };
 
   const fetchData = async () => {
     try {
@@ -360,18 +399,68 @@ const StokMasuk = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Cari produk, varian, atau cabang..."
-              />
-              {!isSuperadmin && (
-                <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
-                  <Plus className="h-4 w-4" />
-                  Tambah Stok Masuk
-                </Button>
-              )}
+            <div className="space-y-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateFilter">Tanggal</Label>
+                  <Input
+                    id="dateFilter"
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="productFilter">Produk</Label>
+                  <Select value={productFilter} onValueChange={(v) => {
+                    setProductFilter(v === "all" ? "" : v);
+                    setVariantFilter("");
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Semua Produk" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Produk</SelectItem>
+                      {uniqueProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {productFilter && getFilterVariants().length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="variantFilter">Varian</Label>
+                    <Select value={variantFilter} onValueChange={(v) => setVariantFilter(v === "all" ? "" : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Semua Varian" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Varian</SelectItem>
+                        {getFilterVariants().map((variant) => (
+                          <SelectItem key={variant} value={variant}>
+                            {variant}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Cari produk, varian, atau cabang..."
+                />
+                {!isSuperadmin && (
+                  <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
+                    <Plus className="h-4 w-4" />
+                    Tambah Stok Masuk
+                  </Button>
+                )}
+              </div>
             </div>
             {loading ? (
               <div className="text-center py-8">

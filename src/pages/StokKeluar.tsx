@@ -53,7 +53,7 @@ interface StockOut {
   date: string;
   user_id: string;
   products: { name: string };
-  cabang: { name: string };
+  cabang: { name: string; id: string };
   jenis_stok_keluar: { name: string };
   profiles?: { email: string };
 }
@@ -88,6 +88,10 @@ const StokKeluar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
+  const [variantFilter, setVariantFilter] = useState<string>("");
+  const [destinationFilter, setDestinationFilter] = useState<string>("");
   const [formData, setFormData] = useState({
     product_id: "",
     variant: "",
@@ -100,16 +104,48 @@ const StokKeluar = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = stockOuts.filter(
+    let filtered = stockOuts.filter(
       (item) =>
         item.products.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.variant && item.variant.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.cabang.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.jenis_stok_keluar.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Apply date filter
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter);
+      filterDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(filterDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      filtered = filtered.filter((item) => {
+        const itemDate = new Date(item.date);
+        return itemDate >= filterDate && itemDate < nextDay;
+      });
+    }
+
+    // Apply product filter
+    if (productFilter) {
+      const selectedProductName = products.find(p => p.id === productFilter)?.name;
+      if (selectedProductName) {
+        filtered = filtered.filter((item) => item.products.name === selectedProductName);
+      }
+    }
+
+    // Apply variant filter
+    if (variantFilter) {
+      filtered = filtered.filter((item) => item.variant === variantFilter);
+    }
+
+    // Apply destination filter
+    if (destinationFilter) {
+      filtered = filtered.filter((item) => item.cabang.id === destinationFilter);
+    }
+
     setFilteredStockOuts(filtered);
     setCurrentPage(1);
-  }, [searchQuery, stockOuts]);
+  }, [searchQuery, stockOuts, dateFilter, productFilter, variantFilter, destinationFilter, products]);
 
   useEffect(() => {
     if (formData.product_id) {
@@ -127,6 +163,15 @@ const StokKeluar = () => {
     }
   }, [formData.product_id, products]);
 
+  // Get variants for filter based on selected product
+  const getFilterVariants = () => {
+    if (!productFilter) return [];
+    const selectedProduct = products.find(p => p.id === productFilter);
+    if (!selectedProduct) return [];
+    const variants = products.filter(p => p.name === selectedProduct.name && p.variant);
+    return variants.map(v => v.variant!).filter(Boolean);
+  };
+
   const fetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -143,7 +188,7 @@ const StokKeluar = () => {
 
       let stockOutsQuery = supabase
         .from("stock_out")
-        .select("*, products(name), cabang(name), jenis_stok_keluar(name)")
+        .select("*, products(name), cabang(name, id), jenis_stok_keluar(name)")
         .order("date", { ascending: false });
 
       let productsQuery = supabase.from("products").select("*").order("name");
@@ -384,18 +429,84 @@ const StokKeluar = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-4">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Cari produk, varian, tujuan, atau jenis..."
-              />
-              {!isSuperadmin && (
-                <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
-                  <Plus className="h-4 w-4" />
-                  Tambah Stok Keluar
-                </Button>
-              )}
+            <div className="space-y-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateFilter">Tanggal</Label>
+                  <Input
+                    id="dateFilter"
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="productFilter">Produk</Label>
+                  <Select value={productFilter} onValueChange={(v) => {
+                    setProductFilter(v === "all" ? "" : v);
+                    setVariantFilter("");
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Semua Produk" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Produk</SelectItem>
+                      {uniqueProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {productFilter && getFilterVariants().length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="variantFilter">Varian</Label>
+                    <Select value={variantFilter} onValueChange={(v) => setVariantFilter(v === "all" ? "" : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Semua Varian" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Varian</SelectItem>
+                        {getFilterVariants().map((variant) => (
+                          <SelectItem key={variant} value={variant}>
+                            {variant}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="destinationFilter">Tujuan</Label>
+                  <Select value={destinationFilter} onValueChange={(v) => setDestinationFilter(v === "all" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Semua Tujuan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Tujuan</SelectItem>
+                      {cabangs.map((cabang) => (
+                        <SelectItem key={cabang.id} value={cabang.id}>
+                          {cabang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Cari produk, varian, tujuan, atau jenis..."
+                />
+                {!isSuperadmin && (
+                  <Button onClick={() => setDialogOpen(true)} className="gap-2 whitespace-nowrap">
+                    <Plus className="h-4 w-4" />
+                    Tambah Stok Keluar
+                  </Button>
+                )}
+              </div>
             </div>
             {loading ? (
               <div className="text-center py-8">
