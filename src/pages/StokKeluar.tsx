@@ -339,22 +339,26 @@ const StokKeluar = () => {
                       <SelectValue placeholder="Pilih tujuan" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>SAJ</SelectLabel>
-                        {jenisStokKeluar.map((jenis) => (
-                          <SelectItem key={jenis.id} value={`jenis_${jenis.id}`}>
-                            {jenis.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>CABANG</SelectLabel>
-                        {cabangs.map((cabang) => (
-                          <SelectItem key={cabang.id} value={`cabang_${cabang.id}`}>
-                            {cabang.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                      {jenisStokKeluar.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>SAJ</SelectLabel>
+                          {jenisStokKeluar.map((jenis) => (
+                            <SelectItem key={jenis.id} value={`jenis_${jenis.id}`}>
+                              {jenis.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                      {cabangs.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>CABANG</SelectLabel>
+                          {cabangs.map((cabang) => (
+                            <SelectItem key={cabang.id} value={`cabang_${cabang.id}`}>
+                              {cabang.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

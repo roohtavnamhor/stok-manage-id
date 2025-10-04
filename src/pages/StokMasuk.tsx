@@ -315,22 +315,26 @@ const StokMasuk = () => {
                       <SelectValue placeholder="Pilih sumber" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>SUPPLIER</SelectLabel>
-                        {supplierCabangs.map((cabang) => (
-                          <SelectItem key={cabang.id} value={cabang.id}>
-                            {cabang.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>CABANG</SelectLabel>
-                        {otherCabangs.map((cabang) => (
-                          <SelectItem key={cabang.id} value={cabang.id}>
-                            {cabang.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                      {supplierCabangs.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>SUPPLIER</SelectLabel>
+                          {supplierCabangs.map((cabang) => (
+                            <SelectItem key={cabang.id} value={cabang.id}>
+                              {cabang.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                      {otherCabangs.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>CABANG</SelectLabel>
+                          {otherCabangs.map((cabang) => (
+                            <SelectItem key={cabang.id} value={cabang.id}>
+                              {cabang.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
