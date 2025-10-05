@@ -442,7 +442,9 @@ const StokKeluar = () => {
         <Card>
           <CardHeader>
             <div className="flex items-start gap-2">
-              <ArrowUpFromLine className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="p-2 bg-destructive/10 rounded-lg">
+                <ArrowUpFromLine className="h-5 w-5 text-destructive" />
+              </div>
               <div>
                 <CardTitle>Riwayat Stok Keluar</CardTitle>
                 <CardDescription>{filteredStockOuts.length} transaksi stok keluar</CardDescription>

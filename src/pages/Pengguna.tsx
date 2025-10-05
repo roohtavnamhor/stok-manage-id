@@ -153,11 +153,15 @@ const Pengguna = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UsersIcon className="h-5 w-5" />
-              Daftar Pengguna
-            </CardTitle>
-            <CardDescription>{profiles.length} pengguna terdaftar</CardDescription>
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-secondary/10 rounded-lg">
+                <UsersIcon className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <CardTitle>Daftar Pengguna</CardTitle>
+                <CardDescription>{profiles.length} pengguna terdaftar</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (

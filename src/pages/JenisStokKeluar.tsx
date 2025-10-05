@@ -168,11 +168,15 @@ const JenisStokKeluar = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              Daftar Jenis Stok Keluar
-            </CardTitle>
-            <CardDescription>{jenisStokKeluar.length} jenis terdaftar</CardDescription>
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-warning/10 rounded-lg">
+                <Tag className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <CardTitle>Daftar Jenis Stok Keluar</CardTitle>
+                <CardDescription>{jenisStokKeluar.length} jenis terdaftar</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (

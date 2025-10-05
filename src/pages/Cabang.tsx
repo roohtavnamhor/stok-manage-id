@@ -156,11 +156,15 @@ const Cabang = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Daftar Cabang
-            </CardTitle>
-            <CardDescription>{cabangs.length} cabang terdaftar</CardDescription>
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Daftar Cabang</CardTitle>
+                <CardDescription>{cabangs.length} cabang terdaftar</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (

@@ -448,7 +448,9 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <div className="flex items-start gap-2">
-              <Package className="h-5 w-5 mt-0.5" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
               <div>
                 <CardTitle>Daftar Produk</CardTitle>
                 <CardDescription>{Object.keys(groupedProducts).length} produk terdaftar</CardDescription>

@@ -391,7 +391,9 @@ const StokMasuk = () => {
         <Card>
           <CardHeader>
             <div className="flex items-start gap-2">
-              <ArrowDownToLine className="h-5 w-5 text-success mt-0.5" />
+              <div className="p-2 bg-success/10 rounded-lg">
+                <ArrowDownToLine className="h-5 w-5 text-success" />
+              </div>
               <div>
                 <CardTitle>Riwayat Stok Masuk</CardTitle>
                 <CardDescription>{filteredStockIns.length} transaksi stok masuk</CardDescription>
