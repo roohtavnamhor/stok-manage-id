@@ -267,9 +267,9 @@ const StokKeluar = () => {
 
       if (type === "cabang") {
         destination_id = id;
-        // Default jenis for cabang transfer
-        const defaultJenis = jenisStokKeluar.find((j) => j.name.toLowerCase() === "pemakaian");
-        jenis_id = defaultJenis ? defaultJenis.id : jenisStokKeluar[0]?.id || "";
+        // If cabang is selected, use ORDERAN as jenis
+        const orderanJenis = jenisStokKeluar.find((j) => j.name.toLowerCase() === "orderan");
+        jenis_id = orderanJenis ? orderanJenis.id : jenisStokKeluar[0]?.id || "";
       } else {
         jenis_id = id;
         // For SAJ types, we still need a destination (can be a default cabang)
