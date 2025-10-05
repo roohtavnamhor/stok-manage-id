@@ -272,8 +272,9 @@ const StokKeluar = () => {
         jenis_id = orderanJenis ? orderanJenis.id : jenisStokKeluar[0]?.id || "";
       } else {
         jenis_id = id;
-        // For SAJ types, we still need a destination (can be a default cabang)
-        destination_id = cabangs[0]?.id || "";
+        // For SAJ types, destination is SAJ
+        const sajCabang = cabangs.find((c) => c.name.toUpperCase() === "SAJ");
+        destination_id = sajCabang ? sajCabang.id : cabangs[0]?.id || "";
       }
 
       const { error } = await supabase.from("stock_out").insert({
