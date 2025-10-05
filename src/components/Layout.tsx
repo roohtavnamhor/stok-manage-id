@@ -47,7 +47,6 @@ const Layout = ({ children }: LayoutProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
-  const [displayName, setDisplayName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -85,14 +84,13 @@ const Layout = ({ children }: LayoutProps) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("role, email, display_name")
+        .select("role, email")
         .eq("id", userId)
         .single();
 
       if (error) throw error;
       setUserRole(data?.role || "user");
       setUserEmail(data?.email || "");
-      setDisplayName(data?.display_name || "");
     } catch (error) {
       console.error("Error fetching user role:", error);
       setUserRole("user");
@@ -132,7 +130,6 @@ const Layout = ({ children }: LayoutProps) => {
   );
 
   const getDisplayName = () => {
-    if (displayName) return displayName;
     if (!userEmail) return "User";
     const name = userEmail.split("@")[0];
     return name.charAt(0).toUpperCase() + name.slice(1);

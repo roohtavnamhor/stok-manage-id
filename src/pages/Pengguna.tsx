@@ -15,7 +15,6 @@ import { Plus, Users as UsersIcon } from "lucide-react";
 interface Profile {
   id: string;
   email: string;
-  display_name: string | null;
   role: string;
   created_at: string;
 }
@@ -178,7 +177,6 @@ const Pengguna = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nama</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Peran</TableHead>
                     <TableHead>Tanggal Dibuat</TableHead>
@@ -187,8 +185,7 @@ const Pengguna = () => {
                 <TableBody>
                   {profiles.map((profile) => (
                     <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.display_name || profile.email.split('@')[0]}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{profile.email}</TableCell>
+                      <TableCell className="font-medium">{profile.email}</TableCell>
                       <TableCell>
                         <Badge variant={profile.role === "superadmin" ? "default" : "secondary"}>
                           {profile.role === "superadmin" ? "Superadmin" : "User"}

@@ -5,7 +5,6 @@ CREATE TYPE public.app_role AS ENUM ('superadmin', 'user');
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
-  display_name TEXT,
   role app_role NOT NULL DEFAULT 'user',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -217,20 +216,19 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, display_name, role)
+  INSERT INTO public.profiles (id, email, role)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'display_name', SPLIT_PART(NEW.email, '@', 1)),
     COALESCE(NEW.raw_user_meta_data->>'role', 'user')::app_role
   );
-
+  
   INSERT INTO public.user_roles (user_id, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'role', 'user')::app_role
   );
-
+  
   RETURN NEW;
 END;
 $$;
