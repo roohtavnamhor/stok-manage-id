@@ -139,19 +139,19 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border px-6 py-4">
         <div className="flex items-start gap-2">
-          <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+          <div className="p-2 bg-primary rounded-lg">
             <Package className="h-6 w-6 text-white" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-sidebar-foreground">Stok Gudang</h2>
-            <p className="text-xs text-sidebar-foreground/80">Manajemen Stok SAJ</p>
+            <p className="text-xs text-sidebar-foreground/60">Manajemen Stok SAJ</p>
           </div>
         </div>
       </div>
       <div className="border-b border-sidebar-border px-6 py-4">
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+        <div className="bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
           <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
-          <p className="text-xs text-sidebar-foreground/80">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
+          <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">
@@ -160,8 +160,8 @@ const Layout = ({ children }: LayoutProps) => {
             key={item.path}
             variant="ghost"
             className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-white/10 hover:text-white transition-colors",
-              location.pathname === item.path && "bg-white/20 text-white font-semibold"
+              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+              location.pathname === item.path && "bg-primary text-white font-semibold"
             )}
             onClick={() => {
               navigate(item.path);
