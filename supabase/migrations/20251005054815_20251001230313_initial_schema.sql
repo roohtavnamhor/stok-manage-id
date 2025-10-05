@@ -2,7 +2,7 @@
 CREATE TYPE public.app_role AS ENUM ('superadmin', 'user');
 
 -- Create profiles table
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   display_name TEXT,
@@ -13,7 +13,7 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Create user_roles table for secure role checking
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   role app_role NOT NULL,
@@ -38,7 +38,7 @@ AS $$
 $$;
 
 -- Create cabang (branch) table
-CREATE TABLE public.cabang (
+CREATE TABLE IF NOT EXISTS public.cabang (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
@@ -47,7 +47,7 @@ CREATE TABLE public.cabang (
 ALTER TABLE public.cabang ENABLE ROW LEVEL SECURITY;
 
 -- Create jenis_stok_keluar (outbound stock type) table
-CREATE TABLE public.jenis_stok_keluar (
+CREATE TABLE IF NOT EXISTS public.jenis_stok_keluar (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   description TEXT,
@@ -57,7 +57,7 @@ CREATE TABLE public.jenis_stok_keluar (
 ALTER TABLE public.jenis_stok_keluar ENABLE ROW LEVEL SECURITY;
 
 -- Create products table
-CREATE TABLE public.products (
+CREATE TABLE IF NOT EXISTS public.products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   variant TEXT,
@@ -68,7 +68,7 @@ CREATE TABLE public.products (
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
 -- Create stock_in table
-CREATE TABLE public.stock_in (
+CREATE TABLE IF NOT EXISTS public.stock_in (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES public.products(id) ON DELETE CASCADE NOT NULL,
   variant TEXT,
@@ -82,7 +82,7 @@ CREATE TABLE public.stock_in (
 ALTER TABLE public.stock_in ENABLE ROW LEVEL SECURITY;
 
 -- Create stock_out table
-CREATE TABLE public.stock_out (
+CREATE TABLE IF NOT EXISTS public.stock_out (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID REFERENCES public.products(id) ON DELETE CASCADE NOT NULL,
   variant TEXT,
@@ -112,6 +112,11 @@ CREATE POLICY "Superadmins can insert profiles"
 CREATE POLICY "Superadmins can update profiles"
   ON public.profiles FOR UPDATE
   USING (public.has_role(auth.uid(), 'superadmin'));
+
+CREATE POLICY "Users can update their own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
 -- User roles policies
 CREATE POLICY "Users can view their own roles"
@@ -224,13 +229,13 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'display_name', SPLIT_PART(NEW.email, '@', 1)),
     COALESCE(NEW.raw_user_meta_data->>'role', 'user')::app_role
   );
-
+  
   INSERT INTO public.user_roles (user_id, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'role', 'user')::app_role
   );
-
+  
   RETURN NEW;
 END;
 $$;
@@ -244,9 +249,11 @@ CREATE TRIGGER on_auth_user_created
 INSERT INTO public.cabang (name) VALUES
   ('SUPPLIER'),
   ('AL-FATIH'),
-  ('CIGADUNG');
+  ('CIGADUNG')
+ON CONFLICT DO NOTHING;
 
 -- Seed data for jenis_stok_keluar
 INSERT INTO public.jenis_stok_keluar (name, description) VALUES
   ('PENJUALAN', 'Barang keluar untuk dijual'),
-  ('PEMAKAIAN', 'Barang keluar untuk dipakai internal');
+  ('PEMAKAIAN', 'Barang keluar untuk dipakai internal')
+ON CONFLICT DO NOTHING;
