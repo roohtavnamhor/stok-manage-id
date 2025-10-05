@@ -366,41 +366,68 @@ const StokKeluar = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="jenis">Jenis *</Label>
-                  <Select
-                    value={formData.jenis_id}
-                    onValueChange={(value) => setFormData({ ...formData, jenis_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih jenis" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jenisStokKeluar.map((jenis) => (
-                        <SelectItem key={jenis.id} value={jenis.id}>
-                          {jenis.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="destination">Tujuan *</Label>
                   <Select
                     value={formData.destination_id}
-                    onValueChange={(value) => setFormData({ ...formData, destination_id: value })}
+                    onValueChange={(value) => setFormData({ ...formData, destination_id: value, jenis_id: "" })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tujuan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cabangs.filter(c => c.name.toUpperCase() !== "SUPPLIER").map((cabang) => (
-                        <SelectItem key={cabang.id} value={cabang.id}>
-                          {cabang.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>PUSAT</SelectLabel>
+                        {cabangs.filter(c => c.name.toUpperCase() === "SAJ").map((cabang) => (
+                          <SelectItem key={cabang.id} value={cabang.id}>
+                            {cabang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>CABANG</SelectLabel>
+                        {cabangs.filter(c => c.name.toUpperCase() !== "SAJ" && c.name.toUpperCase() !== "SUPPLIER").map((cabang) => (
+                          <SelectItem key={cabang.id} value={cabang.id}>
+                            {cabang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.destination_id && (
+                  <div className="space-y-2">
+                    <Label htmlFor="jenis">Jenis *</Label>
+                    <Select
+                      value={formData.jenis_id}
+                      onValueChange={(value) => setFormData({ ...formData, jenis_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih jenis" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          const selectedCabang = cabangs.find(c => c.id === formData.destination_id);
+                          const isSAJ = selectedCabang?.name.toUpperCase() === "SAJ";
+                          
+                          return jenisStokKeluar
+                            .filter(jenis => {
+                              const jenisName = jenis.name.toUpperCase();
+                              if (isSAJ) {
+                                return ["PENJUALAN", "PEMAKAIAN", "RUSAK"].includes(jenisName);
+                              } else {
+                                return jenisName === "ORDERAN";
+                              }
+                            })
+                            .map((jenis) => (
+                              <SelectItem key={jenis.id} value={jenis.id}>
+                                {jenis.name}
+                              </SelectItem>
+                            ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="flex gap-2 justify-end">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Batal
