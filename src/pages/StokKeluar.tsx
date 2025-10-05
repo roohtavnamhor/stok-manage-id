@@ -96,7 +96,8 @@ const StokKeluar = () => {
     product_id: "",
     variant: "",
     quantity: "",
-    destination_type: "", // Format: "cabang_<id>" or "jenis_<id>"
+    jenis_id: "",
+    destination_id: "",
   });
 
   useEffect(() => {
@@ -247,7 +248,7 @@ const StokKeluar = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.product_id || !formData.quantity || !formData.destination_type) {
+    if (!formData.product_id || !formData.quantity || !formData.jenis_id || !formData.destination_id) {
       toast.error("Semua field wajib diisi kecuali varian");
       return;
     }
@@ -261,28 +262,12 @@ const StokKeluar = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [type, id] = formData.destination_type.split("_");
-      let destination_id = "";
-      let jenis_id = "";
-
-      if (type === "cabang") {
-        destination_id = id;
-        // If cabang is selected, use ORDERAN as jenis
-        const orderanJenis = jenisStokKeluar.find((j) => j.name.toLowerCase() === "orderan");
-        jenis_id = orderanJenis ? orderanJenis.id : jenisStokKeluar[0]?.id || "";
-      } else {
-        jenis_id = id;
-        // For SAJ types, destination is SAJ
-        const sajCabang = cabangs.find((c) => c.name.toUpperCase() === "SAJ");
-        destination_id = sajCabang ? sajCabang.id : cabangs[0]?.id || "";
-      }
-
       const { error } = await supabase.from("stock_out").insert({
         product_id: formData.product_id,
         variant: formData.variant || null,
         quantity: parseInt(formData.quantity),
-        destination_id,
-        jenis_id,
+        destination_id: formData.destination_id,
+        jenis_id: formData.jenis_id,
         user_id: user.id,
       });
 
@@ -291,7 +276,7 @@ const StokKeluar = () => {
       toast.success("Stok keluar berhasil ditambahkan");
       setDialogOpen(false);
       setConfirmDialogOpen(false);
-      setFormData({ product_id: "", variant: "", quantity: "", destination_type: "" });
+      setFormData({ product_id: "", variant: "", quantity: "", jenis_id: "", destination_id: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Gagal menambahkan stok keluar");
@@ -381,35 +366,38 @@ const StokKeluar = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="jenis">Jenis *</Label>
+                  <Select
+                    value={formData.jenis_id}
+                    onValueChange={(value) => setFormData({ ...formData, jenis_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih jenis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jenisStokKeluar.map((jenis) => (
+                        <SelectItem key={jenis.id} value={jenis.id}>
+                          {jenis.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="destination">Tujuan *</Label>
                   <Select
-                    value={formData.destination_type}
-                    onValueChange={(value) => setFormData({ ...formData, destination_type: value })}
+                    value={formData.destination_id}
+                    onValueChange={(value) => setFormData({ ...formData, destination_id: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tujuan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jenisStokKeluar.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel>SAJ</SelectLabel>
-                          {jenisStokKeluar.map((jenis) => (
-                            <SelectItem key={jenis.id} value={`jenis_${jenis.id}`}>
-                              {jenis.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                      {cabangs.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel>CABANG</SelectLabel>
-                          {cabangs.map((cabang) => (
-                            <SelectItem key={cabang.id} value={`cabang_${cabang.id}`}>
-                              {cabang.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
+                      {cabangs.filter(c => c.name.toUpperCase() !== "SUPPLIER").map((cabang) => (
+                        <SelectItem key={cabang.id} value={cabang.id}>
+                          {cabang.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
