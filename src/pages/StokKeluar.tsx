@@ -91,7 +91,7 @@ const StokKeluar = () => {
   const [dateFilter, setDateFilter] = useState<string>("");
   const [productFilter, setProductFilter] = useState<string>("");
   const [variantFilter, setVariantFilter] = useState<string>("");
-  const [destinationFilter, setDestinationFilter] = useState<string>("");
+  const [destinationTypeFilter, setDestinationTypeFilter] = useState<string>("");
   const [formData, setFormData] = useState({
     product_id: "",
     variant: "",
@@ -138,14 +138,19 @@ const StokKeluar = () => {
       filtered = filtered.filter((item) => item.variant === variantFilter);
     }
 
-    // Apply destination filter
-    if (destinationFilter) {
-      filtered = filtered.filter((item) => item.cabang.id === destinationFilter);
+    // Apply destination/type filter
+    if (destinationTypeFilter) {
+      const [type, id] = destinationTypeFilter.split("_");
+      if (type === "cabang") {
+        filtered = filtered.filter((item) => item.cabang.id === id);
+      } else if (type === "jenis") {
+        filtered = filtered.filter((item) => item.jenis_stok_keluar.name === jenisStokKeluar.find(j => j.id === id)?.name);
+      }
     }
 
     setFilteredStockOuts(filtered);
     setCurrentPage(1);
-  }, [searchQuery, stockOuts, dateFilter, productFilter, variantFilter, destinationFilter, products]);
+  }, [searchQuery, stockOuts, dateFilter, productFilter, variantFilter, destinationTypeFilter, products, jenisStokKeluar]);
 
   useEffect(() => {
     if (formData.product_id) {
@@ -482,17 +487,32 @@ const StokKeluar = () => {
                 </div>
               )}
               <div className="w-auto min-w-[150px]">
-                <Select value={destinationFilter} onValueChange={(v) => setDestinationFilter(v === "all" ? "" : v)}>
+                <Select value={destinationTypeFilter} onValueChange={(v) => setDestinationTypeFilter(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua Tujuan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Tujuan</SelectItem>
-                    {cabangs.map((cabang) => (
-                      <SelectItem key={cabang.id} value={cabang.id}>
-                        {cabang.name}
-                      </SelectItem>
-                    ))}
+                    {jenisStokKeluar.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>SAJ</SelectLabel>
+                        {jenisStokKeluar.map((jenis) => (
+                          <SelectItem key={jenis.id} value={`jenis_${jenis.id}`}>
+                            {jenis.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {cabangs.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>CABANG</SelectLabel>
+                        {cabangs.map((cabang) => (
+                          <SelectItem key={cabang.id} value={`cabang_${cabang.id}`}>
+                            {cabang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
