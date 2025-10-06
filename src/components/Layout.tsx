@@ -140,8 +140,8 @@ const Layout = ({ children }: LayoutProps) => {
             <Package className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">Gudang JADID</h2>
-            <p className="text-xs text-sidebar-foreground/60">Manajemen Stok SAJ</p>
+            <h2 className="text-lg font-bold text-sidebar-foreground">GUDANG JADID</h2>
+            <p className="text-xs text-sidebar-foreground/60">MANAJEMEN STOK SAJ</p>
           </div>
         </div>
       </div>
