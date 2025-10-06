@@ -82,18 +82,21 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          name: string | null
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
           created_at?: string
           email: string
           id: string
+          name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []

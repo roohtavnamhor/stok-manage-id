@@ -349,12 +349,14 @@ const Laporan = () => {
           <TabsContent value="summary">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Laporan Sisa Stok
-                  </CardTitle>
-                  <CardDescription>Sisa stok untuk setiap produk dan varian</CardDescription>
+                <div className="flex items-start gap-2">
+                  <div className="p-2 bg-secondary/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <CardTitle>Laporan Sisa Stok</CardTitle>
+                    <CardDescription>Sisa stok untuk setiap produk dan varian</CardDescription>
+                  </div>
                 </div>
                 <Button variant="outline" onClick={() => exportToPDF("summary")}>
                   <Download className="h-4 w-4 mr-2" />
@@ -405,12 +407,14 @@ const Laporan = () => {
           <TabsContent value="stockin">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Laporan Stok Masuk
-                  </CardTitle>
-                  <CardDescription>Filter berdasarkan tanggal dan produk</CardDescription>
+                <div className="flex items-start gap-2">
+                  <div className="p-2 bg-secondary/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <CardTitle>Laporan Stok Masuk</CardTitle>
+                    <CardDescription>Filter berdasarkan tanggal dan produk</CardDescription>
+                  </div>
                 </div>
                 <Button variant="outline" onClick={() => exportToPDF("stockin")}>
                   <Download className="h-4 w-4 mr-2" />
@@ -492,12 +496,14 @@ const Laporan = () => {
           <TabsContent value="stockout">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Laporan Stok Keluar
-                  </CardTitle>
-                  <CardDescription>Filter berdasarkan tanggal dan produk</CardDescription>
+                <div className="flex items-start gap-2">
+                  <div className="p-2 bg-secondary/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <CardTitle>Laporan Stok Keluar</CardTitle>
+                    <CardDescription>Filter berdasarkan tanggal dan produk</CardDescription>
+                  </div>
                 </div>
                 <Button variant="outline" onClick={() => exportToPDF("stockout")}>
                   <Download className="h-4 w-4 mr-2" />

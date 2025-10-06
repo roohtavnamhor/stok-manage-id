@@ -47,6 +47,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -84,13 +85,14 @@ const Layout = ({ children }: LayoutProps) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("role, email")
+        .select("role, email, name")
         .eq("id", userId)
         .single();
 
       if (error) throw error;
       setUserRole(data?.role || "user");
       setUserEmail(data?.email || "");
+      setDisplayName(data?.name || data?.email?.split("@")[0] || "User");
     } catch (error) {
       console.error("Error fetching user role:", error);
       setUserRole("user");
@@ -129,11 +131,6 @@ const Layout = ({ children }: LayoutProps) => {
     (item) => !item.superadminOnly || userRole === "superadmin"
   );
 
-  const getDisplayName = () => {
-    if (!userEmail) return "User";
-    const name = userEmail.split("@")[0];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  };
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
@@ -143,14 +140,14 @@ const Layout = ({ children }: LayoutProps) => {
             <Package className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">Stok Gudang</h2>
+            <h2 className="text-lg font-bold text-sidebar-foreground">Gudang JADID</h2>
             <p className="text-xs text-sidebar-foreground/60">Manajemen Stok SAJ</p>
           </div>
         </div>
       </div>
       <div className="border-b border-sidebar-border px-6 py-4">
         <div className="bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
-          <p className="text-sm font-medium text-sidebar-foreground">{getDisplayName()}</p>
+          <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
           <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
         </div>
       </div>
@@ -220,7 +217,7 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-center border-b border-border px-4 py-3 bg-card">
-          <h1 className="text-lg font-semibold text-foreground">Stok Gudang</h1>
+          <h1 className="text-lg font-semibold text-foreground">Gudang JADID</h1>
         </header>
 
         {/* Page Content */}

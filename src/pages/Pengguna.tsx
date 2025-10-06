@@ -15,6 +15,7 @@ import { Plus, Users as UsersIcon } from "lucide-react";
 interface Profile {
   id: string;
   email: string;
+  name: string | null;
   role: string;
   created_at: string;
 }
@@ -23,7 +24,7 @@ const Pengguna = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "", role: "user" });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "user" });
 
   useEffect(() => {
     fetchProfiles();
@@ -48,8 +49,8 @@ const Pengguna = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email.trim() || !formData.password.trim()) {
-      toast.error("Email dan password harus diisi");
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      toast.error("Nama, email dan password harus diisi");
       return;
     }
 
@@ -60,6 +61,7 @@ const Pengguna = () => {
         options: {
           data: {
             role: formData.role,
+            name: formData.name,
           },
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },
@@ -69,7 +71,7 @@ const Pengguna = () => {
 
       toast.success("Pengguna berhasil ditambahkan");
       setDialogOpen(false);
-      setFormData({ email: "", password: "", role: "user" });
+      setFormData({ name: "", email: "", password: "", role: "user" });
       fetchProfiles();
     } catch (error: any) {
       if (error.message.includes("already registered")) {
@@ -91,7 +93,7 @@ const Pengguna = () => {
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {
-              setFormData({ email: "", password: "", role: "user" });
+              setFormData({ name: "", email: "", password: "", role: "user" });
             }
           }}>
             <DialogTrigger asChild>
@@ -106,6 +108,17 @@ const Pengguna = () => {
                 <DialogDescription>Buat akun pengguna baru</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nama *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Nama Lengkap"
+                    required
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
@@ -177,6 +190,7 @@ const Pengguna = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Nama</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Peran</TableHead>
                     <TableHead>Tanggal Dibuat</TableHead>
@@ -185,7 +199,8 @@ const Pengguna = () => {
                 <TableBody>
                   {profiles.map((profile) => (
                     <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.email}</TableCell>
+                      <TableCell className="font-medium">{profile.name || "-"}</TableCell>
+                      <TableCell>{profile.email}</TableCell>
                       <TableCell>
                         <Badge variant={profile.role === "superadmin" ? "default" : "secondary"}>
                           {profile.role === "superadmin" ? "Superadmin" : "User"}
