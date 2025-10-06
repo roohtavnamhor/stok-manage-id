@@ -114,7 +114,7 @@ const Pengguna = () => {
         .update({
           name: editFormData.name,
           email: editFormData.email,
-          role: editFormData.role,
+          role: editFormData.role as "user" | "superadmin",
         })
         .eq("id", selectedProfile.id);
 
@@ -123,7 +123,7 @@ const Pengguna = () => {
       // Update user_roles
       const { error: roleError } = await supabase
         .from("user_roles")
-        .update({ role: editFormData.role })
+        .update({ role: editFormData.role as "user" | "superadmin" })
         .eq("user_id", selectedProfile.id);
 
       if (roleError) throw roleError;
