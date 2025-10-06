@@ -148,7 +148,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="border-b border-sidebar-border px-6 py-4">
         <div className="bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
           <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
-          <p className="text-xs text-sidebar-foreground/60">{userRole === "superadmin" ? "Super Admin" : "User"}</p>
+          <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole === "superadmin" ? "Superadmin" : userRole || "User"}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">

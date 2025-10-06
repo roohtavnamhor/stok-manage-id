@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Users as UsersIcon } from "lucide-react";
+import { Plus, Users as UsersIcon, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Profile {
   id: string;
@@ -24,7 +25,11 @@ const Pengguna = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "user" });
+  const [editFormData, setEditFormData] = useState({ name: "", email: "", role: "user" });
 
   useEffect(() => {
     fetchProfiles();
@@ -77,8 +82,83 @@ const Pengguna = () => {
       if (error.message.includes("already registered")) {
         toast.error("Email sudah terdaftar");
       } else {
-        toast.error("Gagal menambahkan pengguna");
+      toast.error("Gagal menambahkan pengguna");
       }
+    }
+  };
+
+  const handleEdit = (profile: Profile) => {
+    setSelectedProfile(profile);
+    setEditFormData({ 
+      name: profile.name || "", 
+      email: profile.email, 
+      role: profile.role 
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedProfile) return;
+    
+    if (!editFormData.name.trim() || !editFormData.email.trim()) {
+      toast.error("Nama dan email harus diisi");
+      return;
+    }
+
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          name: editFormData.name,
+          email: editFormData.email,
+          role: editFormData.role,
+        })
+        .eq("id", selectedProfile.id);
+
+      if (profileError) throw profileError;
+
+      // Update user_roles
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .update({ role: editFormData.role })
+        .eq("user_id", selectedProfile.id);
+
+      if (roleError) throw roleError;
+
+      toast.success("Pengguna berhasil diperbarui");
+      setEditDialogOpen(false);
+      setSelectedProfile(null);
+      fetchProfiles();
+    } catch (error: any) {
+      toast.error("Gagal memperbarui pengguna");
+    }
+  };
+
+  const handleDeleteClick = (profile: Profile) => {
+    setSelectedProfile(profile);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedProfile) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", selectedProfile.id);
+
+      if (error) throw error;
+
+      toast.success("Pengguna berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setSelectedProfile(null);
+      fetchProfiles();
+    } catch (error: any) {
+      toast.error("Gagal menghapus pengguna");
     }
   };
 
@@ -194,6 +274,7 @@ const Pengguna = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Peran</TableHead>
                     <TableHead>Tanggal Dibuat</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,6 +288,24 @@ const Pengguna = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(profile.created_at).toLocaleDateString("id-ID")}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEdit(profile)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteClick(profile)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -214,6 +313,83 @@ const Pengguna = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            setSelectedProfile(null);
+            setEditFormData({ name: "", email: "", role: "user" });
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Pengguna</DialogTitle>
+              <DialogDescription>Perbarui informasi pengguna</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nama *</Label>
+                <Input
+                  id="edit-name"
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Nama Lengkap"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  placeholder="nama@example.com"
+                  required
+                  disabled
+                />
+                <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Peran *</Label>
+                <Select value={editFormData.role} onValueChange={(value) => setEditFormData({ ...editFormData, role: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="superadmin">Superadmin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Batal
+                </Button>
+                <Button type="submit">Perbarui</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+              <AlertDialogDescription>
+                Apakah Anda yakin ingin menghapus pengguna <strong>{selectedProfile?.name || selectedProfile?.email}</strong>? 
+                Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Hapus</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
