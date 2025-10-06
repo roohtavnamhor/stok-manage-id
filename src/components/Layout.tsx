@@ -141,7 +141,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
           <div>
             <h2 className="text-lg font-bold text-sidebar-foreground">Gudang SAJ</h2>
-            <p className="text-xs text-sidebar-foreground/60">MANAJEMEN INVENTORY</p>
+            <p className="text-xs text-sidebar-foreground/60">Manajemen Inventory</p>
           </div>
         </div>
       </div>
