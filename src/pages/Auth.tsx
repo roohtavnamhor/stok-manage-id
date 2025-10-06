@@ -18,7 +18,7 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        navigate("/produk");
       }
     };
     checkUser();
@@ -51,7 +51,7 @@ const Auth = () => {
 
       if (data.session) {
         toast.success("Login berhasil!");
-        navigate("/dashboard");
+        navigate("/produk");
       }
     } catch (error: any) {
       toast.error("Terjadi kesalahan saat login");

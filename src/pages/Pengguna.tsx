@@ -68,7 +68,7 @@ const Pengguna = () => {
             role: formData.role,
             name: formData.name,
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/produk`,
         },
       });
 

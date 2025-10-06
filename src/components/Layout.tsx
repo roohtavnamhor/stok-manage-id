@@ -118,7 +118,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navItems: NavItem[] = [
     { name: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, path: "/" },
-    { name: "Produk", icon: <Package className="h-5 w-5" />, path: "/dashboard" },
+    { name: "Produk", icon: <Package className="h-5 w-5" />, path: "/produk" },
     { name: "Stok Masuk", icon: <ArrowDownToLine className="h-5 w-5" />, path: "/stok-masuk" },
     { name: "Stok Keluar", icon: <ArrowUpFromLine className="h-5 w-5" />, path: "/stok-keluar" },
     { name: "Laporan", icon: <FileText className="h-5 w-5" />, path: "/laporan" },
