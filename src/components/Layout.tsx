@@ -182,7 +182,7 @@ const Layout = ({ children }: LayoutProps) => {
       </div>
       <div className="px-6 py-4 border-t border-sidebar-border">
         <p className="text-xs text-center text-sidebar-foreground/50">
-          Copyright by Fath
+          © Crafted by: Fath
         </p>
       </div>
     </div>
