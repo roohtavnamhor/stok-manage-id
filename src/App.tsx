@@ -10,7 +10,6 @@ import StokMasuk from "./pages/StokMasuk";
 import StokKeluar from "./pages/StokKeluar";
 import Laporan from "./pages/Laporan";
 import Cabang from "./pages/Cabang";
-import JenisStokMasuk from "./pages/JenisStokMasuk";
 import JenisStokKeluar from "./pages/JenisStokKeluar";
 import Pengguna from "./pages/Pengguna";
 import NotFound from "./pages/NotFound";
@@ -31,7 +30,6 @@ const App = () => (
           <Route path="/stok-keluar" element={<StokKeluar />} />
           <Route path="/laporan" element={<Laporan />} />
           <Route path="/cabang" element={<Cabang />} />
-          <Route path="/jenis-stok-masuk" element={<JenisStokMasuk />} />
           <Route path="/jenis-stok-keluar" element={<JenisStokKeluar />} />
           <Route path="/pengguna" element={<Pengguna />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
