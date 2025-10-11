@@ -123,6 +123,7 @@ const Layout = ({ children }: LayoutProps) => {
     { name: "Stok Keluar", icon: <ArrowUpFromLine className="h-5 w-5" />, path: "/stok-keluar" },
     { name: "Laporan", icon: <FileText className="h-5 w-5" />, path: "/laporan" },
     { name: "Cabang", icon: <MapPin className="h-5 w-5" />, path: "/cabang", superadminOnly: true },
+    { name: "Jenis Stok Masuk", icon: <Tag className="h-5 w-5" />, path: "/jenis-stok-masuk", superadminOnly: true },
     { name: "Jenis Stok Keluar", icon: <Tag className="h-5 w-5" />, path: "/jenis-stok-keluar", superadminOnly: true },
     { name: "Pengguna", icon: <Users className="h-5 w-5" />, path: "/pengguna", superadminOnly: true },
   ];

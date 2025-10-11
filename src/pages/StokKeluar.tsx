@@ -52,6 +52,9 @@ interface StockOut {
   variant: string | null;
   date: string;
   user_id: string;
+  plat_nomor: string | null;
+  supir: string | null;
+  no_surat_jalan: string | null;
   products: { name: string };
   cabang: { name: string; id: string };
   jenis_stok_keluar: { name: string };
@@ -98,6 +101,9 @@ const StokKeluar = () => {
     quantity: "",
     jenis_id: "",
     destination_id: "",
+    plat_nomor: "",
+    supir: "",
+    no_surat_jalan: "",
   });
 
   useEffect(() => {
@@ -252,8 +258,20 @@ const StokKeluar = () => {
       toast.error("Semua field wajib diisi kecuali varian");
       return;
     }
-    
-    // Show confirmation dialog instead of immediately submitting
+
+    const selectedJenis = jenisStokKeluar.find(j => j.id === formData.jenis_id);
+    const jenisName = selectedJenis?.name.toUpperCase();
+
+    if (jenisName === "RETUR SUPPLIER" && (!formData.plat_nomor || !formData.supir || !formData.no_surat_jalan)) {
+      toast.error("Plat Nomor, Supir, dan No. Surat Jalan wajib diisi untuk RETUR SUPPLIER");
+      return;
+    }
+
+    if (jenisName !== "RETUR SUPPLIER" && (!formData.plat_nomor || !formData.supir)) {
+      toast.error("Plat Nomor dan Supir wajib diisi");
+      return;
+    }
+
     setConfirmDialogOpen(true);
   };
   
@@ -268,6 +286,9 @@ const StokKeluar = () => {
         quantity: parseInt(formData.quantity),
         destination_id: formData.destination_id,
         jenis_id: formData.jenis_id,
+        plat_nomor: formData.plat_nomor || null,
+        supir: formData.supir || null,
+        no_surat_jalan: formData.no_surat_jalan || null,
         user_id: user.id,
       });
 
@@ -276,7 +297,7 @@ const StokKeluar = () => {
       toast.success("Stok keluar berhasil ditambahkan");
       setDialogOpen(false);
       setConfirmDialogOpen(false);
-      setFormData({ product_id: "", variant: "", quantity: "", jenis_id: "", destination_id: "" });
+      setFormData({ product_id: "", variant: "", quantity: "", jenis_id: "", destination_id: "", plat_nomor: "", supir: "", no_surat_jalan: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Gagal menambahkan stok keluar");
@@ -369,7 +390,7 @@ const StokKeluar = () => {
                   <Label htmlFor="destination">Tujuan *</Label>
                   <Select
                     value={formData.destination_id}
-                    onValueChange={(value) => setFormData({ ...formData, destination_id: value, jenis_id: "" })}
+                    onValueChange={(value) => setFormData({ ...formData, destination_id: value, jenis_id: "", plat_nomor: "", supir: "", no_surat_jalan: "" })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tujuan" />
@@ -378,6 +399,14 @@ const StokKeluar = () => {
                       <SelectGroup>
                         <SelectLabel>PUSAT</SelectLabel>
                         {cabangs.filter(c => c.name.toUpperCase() === "SAJ").map((cabang) => (
+                          <SelectItem key={cabang.id} value={cabang.id}>
+                            {cabang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>SUPPLIER</SelectLabel>
+                        {cabangs.filter(c => c.name.toUpperCase() === "SUPPLIER").map((cabang) => (
                           <SelectItem key={cabang.id} value={cabang.id}>
                             {cabang.name}
                           </SelectItem>
@@ -399,7 +428,7 @@ const StokKeluar = () => {
                     <Label htmlFor="jenis">Jenis *</Label>
                     <Select
                       value={formData.jenis_id}
-                      onValueChange={(value) => setFormData({ ...formData, jenis_id: value })}
+                      onValueChange={(value) => setFormData({ ...formData, jenis_id: value, plat_nomor: "", supir: "", no_surat_jalan: "" })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih jenis" />
@@ -407,13 +436,15 @@ const StokKeluar = () => {
                       <SelectContent>
                         {(() => {
                           const selectedCabang = cabangs.find(c => c.id === formData.destination_id);
-                          const isSAJ = selectedCabang?.name.toUpperCase() === "SAJ";
-                          
+                          const cabangName = selectedCabang?.name.toUpperCase();
+
                           return jenisStokKeluar
                             .filter(jenis => {
                               const jenisName = jenis.name.toUpperCase();
-                              if (isSAJ) {
+                              if (cabangName === "SAJ") {
                                 return ["PENJUALAN", "PEMAKAIAN", "RUSAK"].includes(jenisName);
+                              } else if (cabangName === "SUPPLIER") {
+                                return jenisName === "RETUR SUPPLIER";
                               } else {
                                 return jenisName === "ORDERAN";
                               }
@@ -428,6 +459,47 @@ const StokKeluar = () => {
                     </Select>
                   </div>
                 )}
+                {formData.jenis_id && (() => {
+                  const selectedJenis = jenisStokKeluar.find(j => j.id === formData.jenis_id);
+                  const jenisName = selectedJenis?.name.toUpperCase();
+
+                  return (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="plat_nomor">Plat Nomor Mobil *</Label>
+                        <Input
+                          id="plat_nomor"
+                          value={formData.plat_nomor}
+                          onChange={(e) => setFormData({ ...formData, plat_nomor: e.target.value })}
+                          placeholder="Masukkan plat nomor"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="supir">Supir *</Label>
+                        <Input
+                          id="supir"
+                          value={formData.supir}
+                          onChange={(e) => setFormData({ ...formData, supir: e.target.value })}
+                          placeholder="Masukkan nama supir"
+                          required
+                        />
+                      </div>
+                      {jenisName === "RETUR SUPPLIER" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="no_surat_jalan">No. Surat Jalan *</Label>
+                          <Input
+                            id="no_surat_jalan"
+                            value={formData.no_surat_jalan}
+                            onChange={(e) => setFormData({ ...formData, no_surat_jalan: e.target.value })}
+                            placeholder="Masukkan no. surat jalan"
+                            required
+                          />
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 <div className="flex gap-2 justify-end">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Batal

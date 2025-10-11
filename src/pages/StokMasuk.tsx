@@ -52,8 +52,13 @@ interface StockIn {
   variant: string | null;
   date: string;
   user_id: string;
+  plat_nomor: string | null;
+  supir: string | null;
+  no_surat_jalan: string | null;
   products: { name: string };
   cabang: { name: string };
+  jenis_stok_masuk: { name: string } | null;
+  retur_cabang: { name: string } | null;
   profiles?: { email: string };
 }
 
@@ -68,6 +73,11 @@ interface Cabang {
   name: string;
 }
 
+interface JenisStokMasuk {
+  id: string;
+  name: string;
+}
+
 const ITEMS_PER_PAGE = 10;
 
 const StokMasuk = () => {
@@ -75,6 +85,7 @@ const StokMasuk = () => {
   const [filteredStockIns, setFilteredStockIns] = useState<StockIn[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [cabangs, setCabangs] = useState<Cabang[]>([]);
+  const [jenisStokMasuk, setJenisStokMasuk] = useState<JenisStokMasuk[]>([]);
   const [productVariants, setProductVariants] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,6 +100,11 @@ const StokMasuk = () => {
     variant: "",
     quantity: "",
     source_id: "",
+    jenis_stok_masuk_id: "",
+    plat_nomor: "",
+    supir: "",
+    no_surat_jalan: "",
+    retur_cabang_id: "",
   });
 
   useEffect(() => {
@@ -174,7 +190,7 @@ const StokMasuk = () => {
 
       let stockInsQuery = supabase
         .from("stock_in")
-        .select("*, products(name), cabang(name)")
+        .select("*, products(name), cabang(name), jenis_stok_masuk(name), retur_cabang:retur_cabang_id(name)")
         .order("date", { ascending: false });
 
       let productsQuery = supabase.from("products").select("*").order("name");
@@ -184,15 +200,17 @@ const StokMasuk = () => {
         productsQuery = productsQuery.eq("user_id", user.id);
       }
 
-      const [stockInsRes, cabangsRes, productsRes] = await Promise.all([
+      const [stockInsRes, cabangsRes, productsRes, jenisRes] = await Promise.all([
         stockInsQuery,
         supabase.from("cabang").select("*").order("name"),
         productsQuery,
+        supabase.from("jenis_stok_masuk").select("*").order("name"),
       ]);
 
       if (stockInsRes.error) throw stockInsRes.error;
       if (productsRes.error) throw productsRes.error;
       if (cabangsRes.error) throw cabangsRes.error;
+      if (jenisRes.error) throw jenisRes.error;
 
       // Fetch user emails for stock ins if superadmin
       let stockInsWithProfiles = stockInsRes.data || [];
@@ -213,6 +231,7 @@ const StokMasuk = () => {
       setFilteredStockIns(stockInsWithProfiles);
       setProducts(productsRes.data || []);
       setCabangs(cabangsRes.data || []);
+      setJenisStokMasuk(jenisRes.data || []);
     } catch (error: any) {
       toast.error("Gagal memuat data");
     } finally {
@@ -225,12 +244,29 @@ const StokMasuk = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.product_id || !formData.quantity || !formData.source_id) {
+    if (!formData.product_id || !formData.quantity || !formData.source_id || !formData.jenis_stok_masuk_id) {
       toast.error("Semua field wajib diisi kecuali varian");
       return;
     }
-    
-    // Show confirmation dialog instead of immediately submitting
+
+    const selectedJenis = jenisStokMasuk.find(j => j.id === formData.jenis_stok_masuk_id);
+    const jenisName = selectedJenis?.name.toUpperCase();
+
+    if (jenisName === "SUPPLIER" && (!formData.plat_nomor || !formData.supir || !formData.no_surat_jalan)) {
+      toast.error("Plat Nomor, Supir, dan No. Surat Jalan wajib diisi untuk SUPPLIER");
+      return;
+    }
+
+    if (jenisName === "RETUR KONSUMEN" && (!formData.plat_nomor || !formData.supir)) {
+      toast.error("Plat Nomor dan Supir wajib diisi untuk RETUR KONSUMEN");
+      return;
+    }
+
+    if (jenisName === "RETUR CABANG" && (!formData.retur_cabang_id || !formData.plat_nomor || !formData.supir)) {
+      toast.error("Cabang, Plat Nomor, dan Supir wajib diisi untuk RETUR CABANG");
+      return;
+    }
+
     setConfirmDialogOpen(true);
   };
   
@@ -244,6 +280,11 @@ const StokMasuk = () => {
         variant: formData.variant || null,
         quantity: parseInt(formData.quantity),
         source_id: formData.source_id,
+        jenis_stok_masuk_id: formData.jenis_stok_masuk_id,
+        plat_nomor: formData.plat_nomor || null,
+        supir: formData.supir || null,
+        no_surat_jalan: formData.no_surat_jalan || null,
+        retur_cabang_id: formData.retur_cabang_id || null,
         user_id: user.id,
       });
 
@@ -252,7 +293,7 @@ const StokMasuk = () => {
       toast.success("Stok masuk berhasil ditambahkan");
       setDialogOpen(false);
       setConfirmDialogOpen(false);
-      setFormData({ product_id: "", variant: "", quantity: "", source_id: "" });
+      setFormData({ product_id: "", variant: "", quantity: "", source_id: "", jenis_stok_masuk_id: "", plat_nomor: "", supir: "", no_surat_jalan: "", retur_cabang_id: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Gagal menambahkan stok masuk");
@@ -377,6 +418,85 @@ const StokMasuk = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jenis">Jenis Stok Masuk *</Label>
+                  <Select
+                    value={formData.jenis_stok_masuk_id}
+                    onValueChange={(value) => setFormData({ ...formData, jenis_stok_masuk_id: value, plat_nomor: "", supir: "", no_surat_jalan: "", retur_cabang_id: "" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih jenis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jenisStokMasuk.map((jenis) => (
+                        <SelectItem key={jenis.id} value={jenis.id}>
+                          {jenis.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formData.jenis_stok_masuk_id && (() => {
+                  const selectedJenis = jenisStokMasuk.find(j => j.id === formData.jenis_stok_masuk_id);
+                  const jenisName = selectedJenis?.name.toUpperCase();
+
+                  return (
+                    <>
+                      {jenisName === "RETUR CABANG" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="retur_cabang">Nama Cabang *</Label>
+                          <Select
+                            value={formData.retur_cabang_id}
+                            onValueChange={(value) => setFormData({ ...formData, retur_cabang_id: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih cabang" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {otherCabangs.map((cabang) => (
+                                <SelectItem key={cabang.id} value={cabang.id}>
+                                  {cabang.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="plat_nomor">Plat Nomor Mobil *</Label>
+                        <Input
+                          id="plat_nomor"
+                          value={formData.plat_nomor}
+                          onChange={(e) => setFormData({ ...formData, plat_nomor: e.target.value })}
+                          placeholder="Masukkan plat nomor"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="supir">Supir *</Label>
+                        <Input
+                          id="supir"
+                          value={formData.supir}
+                          onChange={(e) => setFormData({ ...formData, supir: e.target.value })}
+                          placeholder="Masukkan nama supir"
+                          required
+                        />
+                      </div>
+                      {jenisName === "SUPPLIER" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="no_surat_jalan">No. Surat Jalan *</Label>
+                          <Input
+                            id="no_surat_jalan"
+                            value={formData.no_surat_jalan}
+                            onChange={(e) => setFormData({ ...formData, no_surat_jalan: e.target.value })}
+                            placeholder="Masukkan no. surat jalan"
+                            required
+                          />
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 <div className="flex gap-2 justify-end">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Batal
@@ -481,6 +601,7 @@ const StokMasuk = () => {
                         <TableHead>Varian</TableHead>
                         <TableHead>Jumlah</TableHead>
                         <TableHead>Sumber</TableHead>
+                        <TableHead>Jenis</TableHead>
                         {isSuperadmin && <TableHead>Pemilik</TableHead>}
                         <TableHead>Tanggal</TableHead>
                       </TableRow>
@@ -496,6 +617,7 @@ const StokMasuk = () => {
                             </span>
                           </TableCell>
                           <TableCell>{item.cabang.name}</TableCell>
+                          <TableCell>{item.jenis_stok_masuk?.name || "-"}</TableCell>
                           {isSuperadmin && (
                             <TableCell>
                               <Badge variant="outline">{item.profiles?.email || "Unknown"}</Badge>
